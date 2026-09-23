@@ -1,0 +1,10 @@
+readonly=0
+parport=0x278,13
+tvoff=1
+root_start=0
+command=root=/dev/hda1 init=/sbin/init video=acorn:dram:384k
+
+
+
+
+

@@ -1,0 +1,6391 @@
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/boot/Makefile linux-2.4.18-rmk4/arch/arm/boot/Makefile
+--- linux-orig-2.4.18-rmk4/arch/arm/boot/Makefile	2005-03-04 14:03:33.297891888 -0800
++++ linux-2.4.18-rmk4/arch/arm/boot/Makefile	2003-03-08 10:08:25.000000000 -0800
+@@ -28,6 +28,10 @@
+ ZTEXTADDR	 = 0x10008000
+ endif
+ 
++ifeq ($(CONFIG_ARCH_WEBPAL),y)
++ZTEXTADDR	 = 0x10008000
++endif
++
+ ifeq ($(CONFIG_ARCH_EBSA110),y)
+ ZTEXTADDR	 = 0x00008000
+ PARAMS_PHYS	 = 0x00000400
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/config.in linux-2.4.18-rmk4/arch/arm/config.in
+--- linux-orig-2.4.18-rmk4/arch/arm/config.in	2005-03-04 14:03:33.300891432 -0800
++++ linux-2.4.18-rmk4/arch/arm/config.in	2004-01-27 21:12:13.000000000 -0800
+@@ -46,7 +46,8 @@
+ 	 Motorola-MX1ADS        CONFIG_ARCH_MX1ADS \
+ 	 RiscPC			CONFIG_ARCH_RPC \
+  	 SA1100-based		CONFIG_ARCH_SA1100 \
+-	 Shark			CONFIG_ARCH_SHARK" RiscPC
++	 Shark			CONFIG_ARCH_SHARK \
++	 WebPal			CONFIG_ARCH_WEBPAL" RiscPC
+ 
+ mainmenu_option next_comment
+ comment 'Archimedes/A5000 Implementations'
+@@ -219,7 +220,8 @@
+ comment 'Processor Type'
+ 
+ # Firstly, figure out what processor architecture version we should be using.
+-if [ "$CONFIG_ARCH_RPC"        = "y" -o "$CONFIG_ARCH_CLPS7500" = "y" ]; then
++if [ "$CONFIG_ARCH_RPC"        = "y" -o "$CONFIG_ARCH_CLPS7500" = "y" -o \
++     "$CONFIG_ARCH_WEBPAL"     = "y" ]; then
+    define_bool CONFIG_CPU_32v3 y
+ else
+    define_bool CONFIG_CPU_32v3 n
+@@ -247,7 +249,7 @@
+ fi
+ 
+ # ARM710
+-if [ "$CONFIG_ARCH_CLPS7500" = "y" ]; then
++if [ "$CONFIG_ARCH_CLPS7500" = "y" -o "$CONFIG_ARCH_WEBPAL" = "y" ]; then
+    define_bool CONFIG_CPU_ARM710 y
+ else
+    if [ "$CONFIG_ARCH_RPC" = "y" ]; then
+@@ -397,6 +399,7 @@
+ if [ "$CONFIG_FOOTBRIDGE_HOST" = "y" -o \
+      "$CONFIG_ARCH_SHARK" = "y" -o \
+      "$CONFIG_ARCH_CLPS7500" = "y" -o \
++     "$CONFIG_ARCH_WEBPAL" = "y" -o \
+      "$CONFIG_ARCH_EBSA110" = "y" -o \
+      "$CONFIG_ARCH_CDB89712" = "y" -o \
+      "$CONFIG_ARCH_EDB7211" = "y" -o \
+@@ -444,6 +447,7 @@
+ if [ "$CONFIG_ARCH_EBSA110" = "y" -o         \
+      "$CONFIG_ARCH_SA1100" = "y" -o          \
+      "$CONFIG_ARCH_CLPS7500" = "y" -o        \
++     "$CONFIG_ARCH_WEBPAL" = "y" -o          \
+      "$CONFIG_ARCH_PERSONAL_SERVER" = "y" -o \
+      "$CONFIG_ARCH_CATS" = "y" -o            \
+      "$CONFIG_ARCH_P720T" = "y" -o	     \
+@@ -462,6 +466,7 @@
+      "$CONFIG_ARCH_SA1100" = "y" -o     \
+      "$CONFIG_ARCH_INTEGRATOR" = "y" -o \
+      "$CONFIG_ARCH_CDB89712" = "y" -o   \
++     "$CONFIG_ARCH_WEBPAL" = "y" -o \
+      "$CONFIG_ARCH_P720T" = "y" ]; then
+    bool 'Timer and CPU usage LEDs' CONFIG_LEDS
+    if [ "$CONFIG_LEDS" = "y" ]; then
+@@ -471,6 +476,7 @@
+ 	   "$CONFIG_ARCH_CO285" = "y" -o      \
+ 	   "$CONFIG_ARCH_SA1100" = "y" -o     \
+            "$CONFIG_ARCH_INTEGRATOR" = "y" -o \
++           "$CONFIG_ARCH_WEBPAL" = "y" -o \
+ 	   "$CONFIG_ARCH_P720T" = "y" ]; then
+          bool '  Timer LED' CONFIG_LEDS_TIMER
+          bool '  CPU usage LED' CONFIG_LEDS_CPU
+@@ -580,7 +586,6 @@
+    comment 'Console drivers'
+    # Select the keyboard type for this architecture.
+    if [ "$CONFIG_FOOTBRIDGE_HOST" = "y" -o \
+-        "$CONFIG_ARCH_CLPS7500" = "y" -o   \
+         "$CONFIG_ARCH_SHARK" = "y" ]; then
+       define_bool CONFIG_PC_KEYB y
+    fi
+@@ -613,6 +618,7 @@
+ 
+ if [ "$CONFIG_ARCH_ACORN" = "y" -o \
+      "$CONFIG_ARCH_CLPS7500" = "y" -o \
++     "$CONFIG_ARCH_WEBPAL" = "y" -o \
+      "$CONFIG_ARCH_TBOX" = "y" -o \
+      "$CONFIG_ARCH_SHARK" = "y" -o \
+      "$CONFIG_ARCH_SA1100" = "y" -o \
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/def-configs/webpal linux-2.4.18-rmk4/arch/arm/def-configs/webpal
+--- linux-orig-2.4.18-rmk4/arch/arm/def-configs/webpal	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/arch/arm/def-configs/webpal	2004-02-19 15:26:29.000000000 -0800
+@@ -0,0 +1,654 @@
++#
++# Automatically generated make config: don't edit
++#
++CONFIG_ARM=y
++# CONFIG_EISA is not set
++# CONFIG_SBUS is not set
++# CONFIG_MCA is not set
++CONFIG_UID16=y
++CONFIG_RWSEM_GENERIC_SPINLOCK=y
++# CONFIG_RWSEM_XCHGADD_ALGORITHM is not set
++# CONFIG_GENERIC_BUST_SPINLOCK is not set
++# CONFIG_GENERIC_ISA_DMA is not set
++
++#
++# Code maturity level options
++#
++CONFIG_EXPERIMENTAL=y
++# CONFIG_OBSOLETE is not set
++
++#
++# Loadable module support
++#
++CONFIG_MODULES=y
++# CONFIG_MODVERSIONS is not set
++# CONFIG_KMOD is not set
++
++#
++# System Type
++#
++# CONFIG_ARCH_ANAKIN is not set
++# CONFIG_ARCH_ARCA5K is not set
++# CONFIG_ARCH_CLPS7500 is not set
++# CONFIG_ARCH_CLPS711X is not set
++# CONFIG_ARCH_CO285 is not set
++# CONFIG_ARCH_EBSA110 is not set
++# CONFIG_ARCH_CAMELOT is not set
++# CONFIG_ARCH_FOOTBRIDGE is not set
++# CONFIG_ARCH_INTEGRATOR is not set
++# CONFIG_ARCH_L7200 is not set
++# CONFIG_ARCH_MX1ADS is not set
++# CONFIG_ARCH_RPC is not set
++# CONFIG_ARCH_SA1100 is not set
++# CONFIG_ARCH_SHARK is not set
++CONFIG_ARCH_WEBPAL=y
++
++#
++# Archimedes/A5000 Implementations
++#
++
++#
++# Archimedes/A5000 Implementations (select only ONE)
++#
++
++#
++# Footbridge Implementations
++#
++
++#
++# SA11x0 Implementations
++#
++# CONFIG_SA1100_H3XXX is not set
++
++#
++# CLPS711X/EP721X Implementations
++#
++# CONFIG_ARCH_EP7211 is not set
++# CONFIG_ARCH_EP7212 is not set
++# CONFIG_ARCH_ACORN is not set
++# CONFIG_FOOTBRIDGE is not set
++# CONFIG_FOOTBRIDGE_HOST is not set
++# CONFIG_FOOTBRIDGE_ADDIN is not set
++CONFIG_CPU_32=y
++# CONFIG_CPU_26 is not set
++
++#
++# Processor Type
++#
++CONFIG_CPU_32v3=y
++# CONFIG_CPU_32v4 is not set
++# CONFIG_CPU_ARM610 is not set
++CONFIG_CPU_ARM710=y
++# CONFIG_CPU_ARM720T is not set
++# CONFIG_CPU_ARM920T is not set
++# CONFIG_CPU_ARM922T is not set
++# CONFIG_CPU_ARM926T is not set
++# CONFIG_CPU_ARM1020 is not set
++# CONFIG_CPU_SA110 is not set
++# CONFIG_CPU_SA1100 is not set
++# CONFIG_ARM_THUMB is not set
++# CONFIG_DISCONTIGMEM is not set
++
++#
++# General setup
++#
++# CONFIG_PCI is not set
++CONFIG_ISA=y
++# CONFIG_ISA_DMA is not set
++# CONFIG_HOTPLUG is not set
++# CONFIG_PCMCIA is not set
++CONFIG_NET=y
++CONFIG_SYSVIPC=y
++# CONFIG_BSD_PROCESS_ACCT is not set
++CONFIG_SYSCTL=y
++
++#
++# At least one math emulation must be selected
++#
++CONFIG_FPE_NWFPE=y
++# CONFIG_FPE_FASTFPE is not set
++CONFIG_KCORE_ELF=y
++# CONFIG_KCORE_AOUT is not set
++CONFIG_BINFMT_AOUT=y
++CONFIG_BINFMT_ELF=y
++# CONFIG_BINFMT_MISC is not set
++# CONFIG_PM is not set
++# CONFIG_ARTHUR is not set
++CONFIG_CMDLINE=""
++CONFIG_LEDS=y
++CONFIG_LEDS_TIMER=y
++CONFIG_LEDS_CPU=y
++CONFIG_ALIGNMENT_TRAP=y
++
++#
++# Parallel port support
++#
++CONFIG_PARPORT=m
++CONFIG_PARPORT_PC=m
++CONFIG_PARPORT_PC_CML1=m
++# CONFIG_PARPORT_SERIAL is not set
++# CONFIG_PARPORT_PC_FIFO is not set
++# CONFIG_PARPORT_PC_SUPERIO is not set
++# CONFIG_PARPORT_AMIGA is not set
++# CONFIG_PARPORT_MFC3 is not set
++# CONFIG_PARPORT_ATARI is not set
++# CONFIG_PARPORT_GSC is not set
++# CONFIG_PARPORT_SUNBPP is not set
++# CONFIG_PARPORT_OTHER is not set
++# CONFIG_PARPORT_1284 is not set
++
++#
++# Memory Technology Devices (MTD)
++#
++CONFIG_MTD=y
++# CONFIG_MTD_DEBUG is not set
++CONFIG_MTD_PARTITIONS=y
++# CONFIG_MTD_CONCAT is not set
++# CONFIG_MTD_REDBOOT_PARTS is not set
++CONFIG_MTD_BOOTLDR_PARTS=y
++# CONFIG_MTD_AFS_PARTS is not set
++
++#
++# User Modules And Translation Layers
++#
++CONFIG_MTD_CHAR=y
++CONFIG_MTD_BLOCK=y
++# CONFIG_FTL is not set
++# CONFIG_NFTL is not set
++
++#
++# RAM/ROM/Flash chip drivers
++#
++# CONFIG_MTD_CFI is not set
++# CONFIG_MTD_JEDECPROBE is not set
++# CONFIG_MTD_GEN_PROBE is not set
++# CONFIG_MTD_RAM is not set
++# CONFIG_MTD_ROM is not set
++# CONFIG_MTD_ABSENT is not set
++CONFIG_MTD_OBSOLETE_CHIPS=y
++CONFIG_MTD_AMDSTD=y
++# CONFIG_MTD_SHARP is not set
++# CONFIG_MTD_JEDEC is not set
++
++#
++# Mapping drivers for chip access
++#
++CONFIG_MTD_WEBPAL=y
++
++#
++# Self-contained MTD device drivers
++#
++# CONFIG_MTD_SLRAM is not set
++# CONFIG_MTD_MTDRAM is not set
++# CONFIG_MTD_BLKMTD is not set
++
++#
++# Disk-On-Chip Device Drivers
++#
++# CONFIG_MTD_DOC1000 is not set
++# CONFIG_MTD_DOC2000 is not set
++# CONFIG_MTD_DOC2001 is not set
++# CONFIG_MTD_DOCPROBE is not set
++
++#
++# NAND Flash Device Drivers
++#
++# CONFIG_MTD_NAND is not set
++
++#
++# Plug and Play configuration
++#
++CONFIG_PNP=y
++CONFIG_ISAPNP=y
++
++#
++# Block devices
++#
++# CONFIG_BLK_DEV_FD is not set
++# CONFIG_BLK_DEV_XD is not set
++# CONFIG_PARIDE is not set
++CONFIG_BLK_DEV_LOOP=m
++CONFIG_BLK_DEV_NBD=m
++# CONFIG_BLK_DEV_RAM is not set
++
++#
++# Multi-device support (RAID and LVM)
++#
++# CONFIG_MD is not set
++
++#
++# Networking options
++#
++CONFIG_PACKET=y
++# CONFIG_PACKET_MMAP is not set
++# CONFIG_NETLINK_DEV is not set
++# CONFIG_NETFILTER is not set
++# CONFIG_FILTER is not set
++CONFIG_UNIX=y
++CONFIG_INET=y
++CONFIG_IP_MULTICAST=y
++# CONFIG_IP_ADVANCED_ROUTER is not set
++CONFIG_IP_PNP=y
++# CONFIG_IP_PNP_DHCP is not set
++CONFIG_IP_PNP_BOOTP=y
++# CONFIG_IP_PNP_RARP is not set
++# CONFIG_NET_IPIP is not set
++# CONFIG_NET_IPGRE is not set
++# CONFIG_IP_MROUTE is not set
++# CONFIG_ARPD is not set
++# CONFIG_INET_ECN is not set
++# CONFIG_SYN_COOKIES is not set
++# CONFIG_IPV6 is not set
++# CONFIG_KHTTPD is not set
++# CONFIG_ATM is not set
++# CONFIG_VLAN_8021Q is not set
++
++#
++#  
++#
++# CONFIG_IPX is not set
++# CONFIG_ATALK is not set
++# CONFIG_DECNET is not set
++# CONFIG_BRIDGE is not set
++# CONFIG_X25 is not set
++# CONFIG_LAPB is not set
++# CONFIG_LLC is not set
++# CONFIG_NET_DIVERT is not set
++# CONFIG_ECONET is not set
++# CONFIG_WAN_ROUTER is not set
++# CONFIG_NET_FASTROUTE is not set
++# CONFIG_NET_HW_FLOWCONTROL is not set
++
++#
++# QoS and/or fair queueing
++#
++# CONFIG_NET_SCHED is not set
++
++#
++# Network device support
++#
++CONFIG_NETDEVICES=y
++
++#
++# ARCnet devices
++#
++# CONFIG_ARCNET is not set
++# CONFIG_DUMMY is not set
++# CONFIG_BONDING is not set
++# CONFIG_EQUALIZER is not set
++# CONFIG_TUN is not set
++# CONFIG_ETHERTAP is not set
++# CONFIG_NET_SB1000 is not set
++
++#
++# Ethernet (10 or 100Mbit)
++#
++CONFIG_NET_ETHERNET=y
++# CONFIG_NET_VENDOR_3COM is not set
++# CONFIG_LANCE is not set
++# CONFIG_NET_VENDOR_SMC is not set
++# CONFIG_NET_VENDOR_RACAL is not set
++# CONFIG_AT1700 is not set
++# CONFIG_DEPCA is not set
++# CONFIG_HP100 is not set
++CONFIG_NET_ISA=y
++# CONFIG_E2100 is not set
++# CONFIG_EWRK3 is not set
++# CONFIG_EEXPRESS is not set
++# CONFIG_EEXPRESS_PRO is not set
++# CONFIG_HPLAN_PLUS is not set
++# CONFIG_HPLAN is not set
++# CONFIG_LP486E is not set
++# CONFIG_ETH16I is not set
++CONFIG_NE2000=y
++# CONFIG_NET_PCI is not set
++# CONFIG_NET_POCKET is not set
++
++#
++# Ethernet (1000 Mbit)
++#
++# CONFIG_ACENIC_OMIT_TIGON_I is not set
++# CONFIG_FDDI is not set
++# CONFIG_HIPPI is not set
++# CONFIG_PLIP is not set
++# CONFIG_PPP is not set
++# CONFIG_SLIP is not set
++
++#
++# Wireless LAN (non-hamradio)
++#
++# CONFIG_NET_RADIO is not set
++
++#
++# Token Ring devices
++#
++# CONFIG_TR is not set
++# CONFIG_NET_FC is not set
++# CONFIG_SHAPER is not set
++
++#
++# Wan interfaces
++#
++# CONFIG_WAN is not set
++
++#
++# Amateur Radio support
++#
++# CONFIG_HAMRADIO is not set
++
++#
++# IrDA (infrared) support
++#
++# CONFIG_IRDA is not set
++
++#
++# ATA/IDE/MFM/RLL support
++#
++# CONFIG_IDE is not set
++# CONFIG_BLK_DEV_IDE_MODES is not set
++# CONFIG_BLK_DEV_HD is not set
++
++#
++# SCSI support
++#
++# CONFIG_SCSI is not set
++
++#
++# I2O device support
++#
++# CONFIG_I2O is not set
++
++#
++# ISDN subsystem
++#
++# CONFIG_ISDN is not set
++
++#
++# Input core support
++#
++# CONFIG_INPUT is not set
++CONFIG_INPUT_MOUSEDEV_SCREEN_X=1024
++CONFIG_INPUT_MOUSEDEV_SCREEN_Y=768
++
++#
++# Character devices
++#
++CONFIG_VT=y
++CONFIG_VT_CONSOLE=y
++CONFIG_SERIAL=y
++# CONFIG_SERIAL_CONSOLE is not set
++# CONFIG_SERIAL_EXTENDED is not set
++# CONFIG_SERIAL_NONSTANDARD is not set
++
++#
++# Serial drivers
++#
++# CONFIG_SERIAL_8250 is not set
++CONFIG_UNIX98_PTYS=y
++CONFIG_UNIX98_PTY_COUNT=256
++# CONFIG_PRINTER is not set
++CONFIG_PPDEV=m
++
++#
++# I2C support
++#
++# CONFIG_I2C is not set
++
++#
++# L3 serial bus support
++#
++# CONFIG_L3 is not set
++
++#
++# Other L3 adapters
++#
++# CONFIG_BIT_SA1100_GPIO is not set
++
++#
++# Mice
++#
++# CONFIG_BUSMOUSE is not set
++# CONFIG_MOUSE is not set
++
++#
++# Joysticks
++#
++# CONFIG_INPUT_GAMEPORT is not set
++
++#
++# Input core support is needed for gameports
++#
++
++#
++# Input core support is needed for joysticks
++#
++# CONFIG_QIC02_TAPE is not set
++
++#
++# Watchdog Cards
++#
++# CONFIG_WATCHDOG is not set
++# CONFIG_NVRAM is not set
++# CONFIG_RTC is not set
++CONFIG_WEBPAL_RTC=y
++# CONFIG_DTLK is not set
++# CONFIG_R3964 is not set
++# CONFIG_APPLICOM is not set
++
++#
++# Ftape, the floppy tape device driver
++#
++# CONFIG_FTAPE is not set
++# CONFIG_AGP is not set
++# CONFIG_DRM is not set
++# CONFIG_SLINK is not set
++
++#
++# Multimedia devices
++#
++# CONFIG_VIDEO_DEV is not set
++
++#
++# File systems
++#
++# CONFIG_QUOTA is not set
++CONFIG_AUTOFS_FS=m
++# CONFIG_AUTOFS4_FS is not set
++# CONFIG_REISERFS_FS is not set
++# CONFIG_ADFS_FS is not set
++# CONFIG_AFFS_FS is not set
++# CONFIG_HFS_FS is not set
++# CONFIG_BFS_FS is not set
++# CONFIG_EXT3_FS is not set
++# CONFIG_JBD is not set
++# CONFIG_FAT_FS is not set
++# CONFIG_EFS_FS is not set
++# CONFIG_JFFS_FS is not set
++# CONFIG_JFFS2_FS is not set
++# CONFIG_CRAMFS is not set
++# CONFIG_TMPFS is not set
++# CONFIG_RAMFS is not set
++# CONFIG_ISO9660_FS is not set
++# CONFIG_MINIX_FS is not set
++# CONFIG_VXFS_FS is not set
++# CONFIG_NTFS_FS is not set
++# CONFIG_HPFS_FS is not set
++CONFIG_PROC_FS=y
++# CONFIG_DEVFS_FS is not set
++CONFIG_DEVPTS_FS=y
++# CONFIG_QNX4FS_FS is not set
++# CONFIG_ROMFS_FS is not set
++# CONFIG_EXT2_FS is not set
++# CONFIG_SYSV_FS is not set
++# CONFIG_UDF_FS is not set
++# CONFIG_UFS_FS is not set
++
++#
++# Network File Systems
++#
++# CONFIG_CODA_FS is not set
++# CONFIG_INTERMEZZO_FS is not set
++CONFIG_NFS_FS=y
++CONFIG_NFS_V3=y
++CONFIG_ROOT_NFS=y
++CONFIG_NFSD=m
++CONFIG_NFSD_V3=y
++CONFIG_SUNRPC=y
++CONFIG_LOCKD=y
++CONFIG_LOCKD_V4=y
++# CONFIG_SMB_FS is not set
++# CONFIG_NCP_FS is not set
++# CONFIG_ZISOFS_FS is not set
++# CONFIG_ZLIB_FS_INFLATE is not set
++
++#
++# Partition Types
++#
++# CONFIG_PARTITION_ADVANCED is not set
++CONFIG_MSDOS_PARTITION=y
++# CONFIG_SMB_NLS is not set
++# CONFIG_NLS is not set
++
++#
++# Console drivers
++#
++# CONFIG_VGA_CONSOLE is not set
++
++#
++# Frame-buffer support
++#
++CONFIG_FB=y
++CONFIG_DUMMY_CONSOLE=y
++CONFIG_FB_WEBPAL=y
++CONFIG_ARCH_WEBPAL_IR_KEYB=y
++CONFIG_FB_ACORN=y
++# CONFIG_FB_VIRTUAL is not set
++# CONFIG_FBCON_ADVANCED is not set
++CONFIG_FBCON_MFB=y
++CONFIG_FBCON_CFB2=y
++CONFIG_FBCON_CFB4=y
++CONFIG_FBCON_CFB8=y
++# CONFIG_FBCON_FONTWIDTH8_ONLY is not set
++# CONFIG_FBCON_FONTS is not set
++CONFIG_FONT_8x8=y
++CONFIG_FONT_8x16=y
++
++#
++# Sound
++#
++CONFIG_SOUND=m
++# CONFIG_SOUND_BT878 is not set
++# CONFIG_SOUND_FUSION is not set
++# CONFIG_SOUND_CS4281 is not set
++# CONFIG_SOUND_ESSSOLO1 is not set
++# CONFIG_SOUND_MAESTRO is not set
++# CONFIG_SOUND_SONICVIBES is not set
++# CONFIG_SOUND_TRIDENT is not set
++# CONFIG_SOUND_MSNDCLAS is not set
++# CONFIG_SOUND_MSNDPIN is not set
++CONFIG_SOUND_OSS=m
++# CONFIG_SOUND_TRACEINIT is not set
++# CONFIG_SOUND_DMAP is not set
++# CONFIG_SOUND_AD1816 is not set
++# CONFIG_SOUND_SGALAXY is not set
++# CONFIG_SOUND_ADLIB is not set
++# CONFIG_SOUND_ACI_MIXER is not set
++# CONFIG_SOUND_CS4232 is not set
++# CONFIG_SOUND_SSCAPE is not set
++# CONFIG_SOUND_GUS is not set
++# CONFIG_SOUND_VMIDI is not set
++# CONFIG_SOUND_TRIX is not set
++# CONFIG_SOUND_MSS is not set
++# CONFIG_SOUND_MPU401 is not set
++# CONFIG_SOUND_NM256 is not set
++# CONFIG_SOUND_MAD16 is not set
++# CONFIG_SOUND_PAS is not set
++# CONFIG_SOUND_PSS is not set
++# CONFIG_SOUND_SB is not set
++# CONFIG_SOUND_AWE32_SYNTH is not set
++# CONFIG_SOUND_WAVEFRONT is not set
++# CONFIG_SOUND_MAUI is not set
++# CONFIG_SOUND_YM3812 is not set
++# CONFIG_SOUND_OPL3SA1 is not set
++# CONFIG_SOUND_OPL3SA2 is not set
++# CONFIG_SOUND_UART6850 is not set
++# CONFIG_SOUND_AEDSP16 is not set
++CONFIG_SOUND_VIDC=m
++
++#
++# Multimedia Capabilities Port drivers
++#
++# CONFIG_MCP is not set
++
++#
++# USB support
++#
++# CONFIG_USB is not set
++
++#
++# USB Controllers
++#
++
++#
++# USB Device Class drivers
++#
++
++#
++#   SCSI support is needed for USB Storage
++#
++
++#
++# USB Human Interface Devices (HID)
++#
++
++#
++#   Input core support is needed for USB HID
++#
++
++#
++# USB Imaging devices
++#
++
++#
++# USB Multimedia devices
++#
++
++#
++#   Video4Linux support is needed for USB Multimedia device support
++#
++
++#
++# USB Network adaptors
++#
++
++#
++# USB port drivers
++#
++
++#
++# USB Serial Converter support
++#
++
++#
++# USB Miscellaneous drivers
++#
++
++#
++# Bluetooth support
++#
++# CONFIG_BLUEZ is not set
++
++#
++# Kernel hacking
++#
++# CONFIG_NO_FRAME_POINTER is not set
++# CONFIG_DEBUG_USER is not set
++# CONFIG_DEBUG_INFO is not set
++CONFIG_DEBUG_KERNEL=y
++# CONFIG_DEBUG_SLAB is not set
++# CONFIG_MAGIC_SYSRQ is not set
++# CONFIG_DEBUG_SPINLOCK is not set
++# CONFIG_DEBUG_WAITQ is not set
++# CONFIG_DEBUG_BUGVERBOSE is not set
++# CONFIG_DEBUG_ERRORS is not set
++CONFIG_DEBUG_LL=y
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/kernel/arch.c linux-2.4.18-rmk4/arch/arm/kernel/arch.c
+--- linux-orig-2.4.18-rmk4/arch/arm/kernel/arch.c	2001-08-12 11:13:59.000000000 -0700
++++ linux-2.4.18-rmk4/arch/arm/kernel/arch.c	2003-03-08 10:08:25.000000000 -0800
+@@ -175,3 +175,16 @@
+ 	INITIRQ(genarch_init_irq)
+ MACHINE_END
+ #endif
++
++#ifdef CONFIG_ARCH_WEBPAL
++
++extern void __init webpal_map_io(void);
++
++MACHINE_START(WEBPAL, "WebPal")
++	MAINTAINER("Bill Danielson")
++	BOOT_MEM(0x10000000, 0x03000000, 0xe0000000)
++	BOOT_PARAMS(0x10000100)
++	MAPIO(webpal_map_io)
++	INITIRQ(genarch_init_irq)
++MACHINE_END
++#endif
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/kernel/debug-armv.S linux-2.4.18-rmk4/arch/arm/kernel/debug-armv.S
+--- linux-orig-2.4.18-rmk4/arch/arm/kernel/debug-armv.S	2005-03-04 14:03:33.332886568 -0800
++++ linux-2.4.18-rmk4/arch/arm/kernel/debug-armv.S	2003-03-08 10:08:25.000000000 -0800
+@@ -44,6 +44,32 @@
+ 		beq	1001b
+ 		.endm
+ 
++#elif defined(CONFIG_ARCH_WEBPAL)
++		.macro	addruart,rx
++
++		mov	\rx,      #0xe0000000
++		orr	\rx, \rx, #0x00010000
++		orr	\rx, \rx, #0x00000be0
++		.endm
++
++		.macro	senduart,rd,rx
++		strb	\rd, [\rx]
++		.endm
++
++		.macro	busyuart,rd,rx
++1001:		ldrb	\rd, [\rx, #0x14]
++		and	\rd, \rd, #0x60
++		teq	\rd, #0x60
++		bne	1001b
++		.endm
++
++		.macro	waituart,rd,rx
++1001:		ldrb	\rd, [\rx, #0x18]
++		tst	\rd, #0x10
++		beq	1001b
++		.endm
++
++
+ #elif defined(CONFIG_ARCH_EBSA110)
+ 		.macro	addruart,rx
+ 		mov	\rx, #0xf0000000
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/kernel/dma-rpc.c linux-2.4.18-rmk4/arch/arm/kernel/dma-rpc.c
+--- linux-orig-2.4.18-rmk4/arch/arm/kernel/dma-rpc.c	2001-02-09 11:29:44.000000000 -0800
++++ linux-2.4.18-rmk4/arch/arm/kernel/dma-rpc.c	2003-03-08 10:08:25.000000000 -0800
+@@ -42,11 +42,11 @@
+ #define TRANSFER_SIZE	2
+ 
+ #define CURA	(0)
+-#define ENDA	(IOMD_IO0ENDA - IOMD_IO0CURA)
+-#define CURB	(IOMD_IO0CURB - IOMD_IO0CURA)
+-#define ENDB	(IOMD_IO0ENDB - IOMD_IO0CURA)
+-#define CR	(IOMD_IO0CR - IOMD_IO0CURA)
+-#define ST	(IOMD_IO0ST - IOMD_IO0CURA)
++#define ENDA	(IOMD_SD0ENDA - IOMD_SD0CURA)
++#define CURB	(IOMD_SD0CURB - IOMD_SD0CURA)
++#define ENDB	(IOMD_SD0ENDB - IOMD_SD0CURA)
++#define CR	(IOMD_SD0CR - IOMD_SD0CURA)
++#define ST	(IOMD_SD0ST - IOMD_SD0CURA)
+ 
+ #define state_prog_a	0
+ #define state_wait_a	1
+@@ -227,6 +227,8 @@
+ 	else
+ 		speed = 0;
+ 
++#ifndef CONFIG_ARCH_WEBPAL
++
+ 	tcr = iomd_readb(IOMD_DMATCR);
+ 	speed &= 3;
+ 
+@@ -253,6 +255,8 @@
+ 
+ 	iomd_writeb(tcr, IOMD_DMATCR);
+ 
++#endif
++
+ 	return speed;
+ }
+ 
+@@ -332,8 +336,13 @@
+ 	disable:	sound_enable_disable_dma,
+ };
+ 
++/* DMA_0 thru DMA_3 and DMA_S1 are not implemented by CLPS7500 systems */
++
+ void __init arch_dma_init(dma_t *dma)
+ {
++
++#ifndef CONFIG_ARCH_WEBPAL
++
+ 	iomd_writeb(0, IOMD_IO0CR);
+ 	iomd_writeb(0, IOMD_IO1CR);
+ 	iomd_writeb(0, IOMD_IO2CR);
+@@ -353,19 +362,33 @@
+ 	dma[DMA_3].dma_base		= IOMD_IO3CURA;
+ 	dma[DMA_3].dma_irq		= IRQ_DMA3;
+ 	dma[DMA_3].d_ops		= &iomd_dma_ops;
++
++#endif
++
+ 	dma[DMA_S0].dma_base		= IOMD_SD0CURA;
+ 	dma[DMA_S0].dma_irq		= IRQ_DMAS0;
+ 	dma[DMA_S0].d_ops		= &iomd_dma_ops;
++
++#ifndef CONFIG_ARCH_WEBPAL
++
+ 	dma[DMA_S1].dma_base		= IOMD_SD1CURA;
+ 	dma[DMA_S1].dma_irq		= IRQ_DMAS1;
+ 	dma[DMA_S1].d_ops		= &iomd_dma_ops;
++
++#endif
++
+ 	dma[DMA_VIRTUAL_FLOPPY].dma_irq	= FIQ_FLOPPYDATA;
+ 	dma[DMA_VIRTUAL_FLOPPY].d_ops	= &floppy_dma_ops;
+ 	dma[DMA_VIRTUAL_SOUND].d_ops	= &sound_dma_ops;
+ 
++#ifndef CONFIG_ARCH_WEBPAL
++
+ 	/*
+ 	 * Setup DMA channels 2,3 to be for podules
+ 	 * and channels 0,1 for internal devices
+ 	 */
+ 	iomd_writeb(DMA_EXT_IO3|DMA_EXT_IO2, IOMD_DMAEXT);
++
++#endif
++
+ }
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/kernel/Makefile linux-2.4.18-rmk4/arch/arm/kernel/Makefile
+--- linux-orig-2.4.18-rmk4/arch/arm/kernel/Makefile	2005-03-04 14:03:33.330886872 -0800
++++ linux-2.4.18-rmk4/arch/arm/kernel/Makefile	2003-03-08 10:08:25.000000000 -0800
+@@ -51,6 +51,7 @@
+ 
+ obj-$(CONFIG_ARCH_ACORN) += ecard.o fiq.o time-acorn.o
+ obj-$(CONFIG_ARCH_CLPS7500) += time-acorn.o
++obj-$(CONFIG_ARCH_WEBPAL) += time-acorn.o fiq.o dma-rpc.o
+ obj-$(CONFIG_DEBUG_LL)	+= debug-$(PROCESSOR).o
+ obj-$(CONFIG_MODULES)	+= armksyms.o
+ obj-$(CONFIG_ARTHUR)	+= arthur.o
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/kernel/time-acorn.c linux-2.4.18-rmk4/arch/arm/kernel/time-acorn.c
+--- linux-orig-2.4.18-rmk4/arch/arm/kernel/time-acorn.c	2001-04-12 12:20:31.000000000 -0700
++++ linux-2.4.18-rmk4/arch/arm/kernel/time-acorn.c	2003-03-08 10:08:25.000000000 -0800
+@@ -28,17 +28,17 @@
+ 	unsigned int count1, count2, status1, status2;
+ 	unsigned long offset = 0;
+ 
+-	status1 = ioc_readb(IOC_IRQREQA);
++	status1 = iomd_readb(IOMD_IRQREQA);
+ 	barrier ();
+-	ioc_writeb (0, IOC_T0LATCH);
++	iomd_writeb (0, IOMD_T0LATCH);
+ 	barrier ();
+-	count1 = ioc_readb(IOC_T0CNTL) | (ioc_readb(IOC_T0CNTH) << 8);
++	count1 = iomd_readb(IOMD_T0CNTL) | (iomd_readb(IOMD_T0CNTH) << 8);
+ 	barrier ();
+-	status2 = ioc_readb(IOC_IRQREQA);
++	status2 = iomd_readb(IOMD_IRQREQA);
+ 	barrier ();
+-	ioc_writeb (0, IOC_T0LATCH);
++	iomd_writeb (0, IOMD_T0LATCH);
+ 	barrier ();
+-	count2 = ioc_readb(IOC_T0CNTL) | (ioc_readb(IOC_T0CNTH) << 8);
++	count2 = iomd_readb(IOMD_T0CNTL) | (iomd_readb(IOMD_T0CNTH) << 8);
+ 
+ 	if (count2 < count1) {
+ 		/*
+@@ -67,9 +67,9 @@
+ 
+ void __init ioctime_init(void)
+ {
+-	ioc_writeb(LATCH & 255, IOC_T0LTCHL);
+-	ioc_writeb(LATCH >> 8, IOC_T0LTCHH);
+-	ioc_writeb(0, IOC_T0GO);
++	iomd_writeb(LATCH & 255, IOMD_T0LTCHL);
++	iomd_writeb(LATCH >> 8, IOMD_T0LTCHH);
++	iomd_writeb(0, IOMD_T0GO);
+ 
+ 	gettimeoffset = ioctime_gettimeoffset;
+ }
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/kernel/time.c linux-2.4.18-rmk4/arch/arm/kernel/time.c
+--- linux-orig-2.4.18-rmk4/arch/arm/kernel/time.c	2001-10-11 09:04:57.000000000 -0700
++++ linux-2.4.18-rmk4/arch/arm/kernel/time.c	2003-03-08 10:08:25.000000000 -0800
+@@ -136,6 +136,7 @@
+ #endif
+ 
+ #ifdef CONFIG_LEDS_TIMER
++
+ static void do_leds(void)
+ {
+ 	static unsigned int count = 50;
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/lib/Makefile linux-2.4.18-rmk4/arch/arm/lib/Makefile
+--- linux-orig-2.4.18-rmk4/arch/arm/lib/Makefile	2001-10-11 09:04:57.000000000 -0700
++++ linux-2.4.18-rmk4/arch/arm/lib/Makefile	2003-03-08 10:08:25.000000000 -0800
+@@ -24,6 +24,7 @@
+ obj-arc		:= ecard.o io-acorn.o floppydma.o
+ obj-rpc		:= ecard.o io-acorn.o floppydma.o
+ obj-clps7500	:= io-acorn.o
++obj-webpal	:= io-acorn.o floppydma.o	
+ obj-l7200     	:= io-acorn.o
+ obj-shark	:= io-shark.o
+ obj-edb7211	:= io-acorn.o
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/Makefile linux-2.4.18-rmk4/arch/arm/Makefile
+--- linux-orig-2.4.18-rmk4/arch/arm/Makefile	2005-03-04 14:03:33.297891888 -0800
++++ linux-2.4.18-rmk4/arch/arm/Makefile	2004-01-30 00:01:09.000000000 -0800
+@@ -85,6 +85,10 @@
+ INCDIR		 = cl7500
+ endif
+ 
++ifeq ($(CONFIG_ARCH_WEBPAL),y)
++MACHINE		= webpal
++endif
++
+ ifeq ($(CONFIG_FOOTBRIDGE),y)
+ MACHINE		 = footbridge
+ INCDIR		 = ebsa285
+@@ -184,7 +188,7 @@
+ endif
+ endif
+ 
+-ifeq ($(findstring y,$(CONFIG_ARCH_CLPS7500) $(CONFIG_ARCH_L7200)),y)
++ifeq ($(findstring y,$(CONFIG_ARCH_CLPS7500) $(CONFIG_ARCH_L7200) $(CONFIG_ARCH_WEBPAL)),y)
+ SUBDIRS		+= drivers/acorn/char
+ DRIVERS		+= drivers/acorn/char/acorn-char.o
+ endif
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/mm/fault-common.c linux-2.4.18-rmk4/arch/arm/mm/fault-common.c
+--- linux-orig-2.4.18-rmk4/arch/arm/mm/fault-common.c	2005-03-04 14:03:33.430871672 -0800
++++ linux-2.4.18-rmk4/arch/arm/mm/fault-common.c	2004-01-30 00:32:39.000000000 -0800
+@@ -43,6 +43,8 @@
+ #define READ_FAULT(m)		(!(m))
+ #endif
+ 
++pgd_t *pgd_saved;
++
+ NORET_TYPE void die(const char *msg, struct pt_regs *regs, int err) ATTRIB_NORET;
+ 
+ /*
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/arch/arm/mm/mm-webpal.c linux-2.4.18-rmk4/arch/arm/mm/mm-webpal.c
+--- linux-orig-2.4.18-rmk4/arch/arm/mm/mm-webpal.c	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/arch/arm/mm/mm-webpal.c	2003-03-08 10:08:25.000000000 -0800
+@@ -0,0 +1,31 @@
++/*
++ *  linux/arch/arm/mm/mm-webpal.c
++ *
++ *  Copyright (C) 1998 Russell King
++ *  Copyright (C) 1999 Nexus Electronics Ltd
++ *  Copyright (C) 2001 Bill Danielson
++ *
++ * Extra MM routines for WebPal architecture
++ */
++
++#include <linux/types.h>
++#include <linux/init.h>
++
++#include <asm/hardware.h>
++#include <asm/page.h>
++#include <asm/proc/domain.h>
++#include <asm/setup.h>
++
++#include <asm/mach/map.h>
++
++static struct map_desc webpal_io_desc[] __initdata = {
++	{ IO_BASE,	IO_START,	IO_SIZE	 , DOMAIN_IO, 0, 1 },	/* IO space	*/
++	{ ISA_BASE,	ISA_START,	ISA_SIZE , DOMAIN_IO, 0, 1 },	/* ISA space	*/
++	{ FLASH_BASE,	FLASH_START,	FLASH_SIZE, DOMAIN_IO, 0, 1 },	/* Flash	*/
++	LAST_DESC
++};
++
++void __init webpal_map_io(void)
++{
++	iotable_init(webpal_io_desc);
++}
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/config.eliteflight linux-2.4.18-rmk4/config.eliteflight
+--- linux-orig-2.4.18-rmk4/config.eliteflight	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/config.eliteflight	2004-05-25 10:47:25.000000000 -0700
+@@ -0,0 +1,676 @@
++#
++# Automatically generated make config: don't edit
++#
++CONFIG_ARM=y
++# CONFIG_EISA is not set
++# CONFIG_SBUS is not set
++# CONFIG_MCA is not set
++CONFIG_UID16=y
++CONFIG_RWSEM_GENERIC_SPINLOCK=y
++# CONFIG_RWSEM_XCHGADD_ALGORITHM is not set
++# CONFIG_GENERIC_BUST_SPINLOCK is not set
++# CONFIG_GENERIC_ISA_DMA is not set
++
++#
++# Code maturity level options
++#
++CONFIG_EXPERIMENTAL=y
++# CONFIG_OBSOLETE is not set
++
++#
++# Loadable module support
++#
++CONFIG_MODULES=y
++# CONFIG_MODVERSIONS is not set
++# CONFIG_KMOD is not set
++
++#
++# System Type
++#
++# CONFIG_ARCH_ANAKIN is not set
++# CONFIG_ARCH_ARCA5K is not set
++# CONFIG_ARCH_CLPS7500 is not set
++# CONFIG_ARCH_CLPS711X is not set
++# CONFIG_ARCH_CO285 is not set
++# CONFIG_ARCH_EBSA110 is not set
++# CONFIG_ARCH_CAMELOT is not set
++# CONFIG_ARCH_FOOTBRIDGE is not set
++# CONFIG_ARCH_INTEGRATOR is not set
++# CONFIG_ARCH_L7200 is not set
++# CONFIG_ARCH_MX1ADS is not set
++# CONFIG_ARCH_RPC is not set
++# CONFIG_ARCH_SA1100 is not set
++# CONFIG_ARCH_SHARK is not set
++CONFIG_ARCH_WEBPAL=y
++
++#
++# Archimedes/A5000 Implementations
++#
++
++#
++# Archimedes/A5000 Implementations (select only ONE)
++#
++
++#
++# Footbridge Implementations
++#
++
++#
++# SA11x0 Implementations
++#
++# CONFIG_SA1100_H3XXX is not set
++
++#
++# CLPS711X/EP721X Implementations
++#
++# CONFIG_ARCH_EP7211 is not set
++# CONFIG_ARCH_EP7212 is not set
++# CONFIG_ARCH_ACORN is not set
++# CONFIG_FOOTBRIDGE is not set
++# CONFIG_FOOTBRIDGE_HOST is not set
++# CONFIG_FOOTBRIDGE_ADDIN is not set
++CONFIG_CPU_32=y
++# CONFIG_CPU_26 is not set
++
++#
++# Processor Type
++#
++CONFIG_CPU_32v3=y
++# CONFIG_CPU_32v4 is not set
++# CONFIG_CPU_ARM610 is not set
++CONFIG_CPU_ARM710=y
++# CONFIG_CPU_ARM720T is not set
++# CONFIG_CPU_ARM920T is not set
++# CONFIG_CPU_ARM922T is not set
++# CONFIG_CPU_ARM926T is not set
++# CONFIG_CPU_ARM1020 is not set
++# CONFIG_CPU_SA110 is not set
++# CONFIG_CPU_SA1100 is not set
++# CONFIG_ARM_THUMB is not set
++# CONFIG_DISCONTIGMEM is not set
++
++#
++# General setup
++#
++# CONFIG_PCI is not set
++CONFIG_ISA=y
++# CONFIG_ISA_DMA is not set
++# CONFIG_HOTPLUG is not set
++# CONFIG_PCMCIA is not set
++CONFIG_NET=y
++CONFIG_SYSVIPC=y
++# CONFIG_BSD_PROCESS_ACCT is not set
++CONFIG_SYSCTL=y
++
++#
++# At least one math emulation must be selected
++#
++CONFIG_FPE_NWFPE=y
++# CONFIG_FPE_FASTFPE is not set
++CONFIG_KCORE_ELF=y
++# CONFIG_KCORE_AOUT is not set
++CONFIG_BINFMT_AOUT=y
++CONFIG_BINFMT_ELF=y
++# CONFIG_BINFMT_MISC is not set
++# CONFIG_PM is not set
++# CONFIG_ARTHUR is not set
++CONFIG_CMDLINE=""
++CONFIG_LEDS=y
++CONFIG_LEDS_TIMER=y
++CONFIG_LEDS_CPU=y
++CONFIG_ALIGNMENT_TRAP=y
++
++#
++# Parallel port support
++#
++CONFIG_PARPORT=m
++CONFIG_PARPORT_PC=m
++CONFIG_PARPORT_PC_CML1=m
++# CONFIG_PARPORT_SERIAL is not set
++# CONFIG_PARPORT_PC_FIFO is not set
++# CONFIG_PARPORT_PC_SUPERIO is not set
++# CONFIG_PARPORT_AMIGA is not set
++# CONFIG_PARPORT_MFC3 is not set
++# CONFIG_PARPORT_ATARI is not set
++# CONFIG_PARPORT_GSC is not set
++# CONFIG_PARPORT_SUNBPP is not set
++# CONFIG_PARPORT_OTHER is not set
++# CONFIG_PARPORT_1284 is not set
++
++#
++# Memory Technology Devices (MTD)
++#
++CONFIG_MTD=y
++# CONFIG_MTD_DEBUG is not set
++CONFIG_MTD_PARTITIONS=y
++# CONFIG_MTD_CONCAT is not set
++# CONFIG_MTD_REDBOOT_PARTS is not set
++CONFIG_MTD_BOOTLDR_PARTS=y
++# CONFIG_MTD_AFS_PARTS is not set
++
++#
++# User Modules And Translation Layers
++#
++CONFIG_MTD_CHAR=y
++CONFIG_MTD_BLOCK=y
++# CONFIG_FTL is not set
++# CONFIG_NFTL is not set
++
++#
++# RAM/ROM/Flash chip drivers
++#
++# CONFIG_MTD_CFI is not set
++# CONFIG_MTD_JEDECPROBE is not set
++# CONFIG_MTD_GEN_PROBE is not set
++# CONFIG_MTD_RAM is not set
++# CONFIG_MTD_ROM is not set
++# CONFIG_MTD_ABSENT is not set
++CONFIG_MTD_OBSOLETE_CHIPS=y
++CONFIG_MTD_AMDSTD=y
++# CONFIG_MTD_SHARP is not set
++# CONFIG_MTD_JEDEC is not set
++
++#
++# Mapping drivers for chip access
++#
++CONFIG_MTD_WEBPAL=y
++
++#
++# Self-contained MTD device drivers
++#
++# CONFIG_MTD_SLRAM is not set
++# CONFIG_MTD_MTDRAM is not set
++# CONFIG_MTD_BLKMTD is not set
++
++#
++# Disk-On-Chip Device Drivers
++#
++# CONFIG_MTD_DOC1000 is not set
++# CONFIG_MTD_DOC2000 is not set
++# CONFIG_MTD_DOC2001 is not set
++# CONFIG_MTD_DOCPROBE is not set
++
++#
++# NAND Flash Device Drivers
++#
++# CONFIG_MTD_NAND is not set
++
++#
++# Plug and Play configuration
++#
++CONFIG_PNP=y
++CONFIG_ISAPNP=y
++
++#
++# Block devices
++#
++# CONFIG_BLK_DEV_FD is not set
++# CONFIG_BLK_DEV_XD is not set
++# CONFIG_PARIDE is not set
++CONFIG_BLK_DEV_LOOP=m
++CONFIG_BLK_DEV_NBD=m
++# CONFIG_BLK_DEV_RAM is not set
++
++#
++# Multi-device support (RAID and LVM)
++#
++# CONFIG_MD is not set
++
++#
++# Networking options
++#
++CONFIG_PACKET=y
++# CONFIG_PACKET_MMAP is not set
++# CONFIG_NETLINK_DEV is not set
++# CONFIG_NETFILTER is not set
++# CONFIG_FILTER is not set
++CONFIG_UNIX=y
++CONFIG_INET=y
++CONFIG_IP_MULTICAST=y
++# CONFIG_IP_ADVANCED_ROUTER is not set
++# CONFIG_IP_PNP is not set
++# CONFIG_NET_IPIP is not set
++# CONFIG_NET_IPGRE is not set
++# CONFIG_IP_MROUTE is not set
++# CONFIG_ARPD is not set
++# CONFIG_INET_ECN is not set
++# CONFIG_SYN_COOKIES is not set
++# CONFIG_IPV6 is not set
++# CONFIG_KHTTPD is not set
++# CONFIG_ATM is not set
++# CONFIG_VLAN_8021Q is not set
++
++#
++#  
++#
++# CONFIG_IPX is not set
++# CONFIG_ATALK is not set
++# CONFIG_DECNET is not set
++# CONFIG_BRIDGE is not set
++# CONFIG_X25 is not set
++# CONFIG_LAPB is not set
++# CONFIG_LLC is not set
++# CONFIG_NET_DIVERT is not set
++# CONFIG_ECONET is not set
++# CONFIG_WAN_ROUTER is not set
++# CONFIG_NET_FASTROUTE is not set
++# CONFIG_NET_HW_FLOWCONTROL is not set
++
++#
++# QoS and/or fair queueing
++#
++# CONFIG_NET_SCHED is not set
++
++#
++# Network device support
++#
++CONFIG_NETDEVICES=y
++
++#
++# ARCnet devices
++#
++# CONFIG_ARCNET is not set
++# CONFIG_DUMMY is not set
++# CONFIG_BONDING is not set
++# CONFIG_EQUALIZER is not set
++# CONFIG_TUN is not set
++# CONFIG_ETHERTAP is not set
++# CONFIG_NET_SB1000 is not set
++
++#
++# Ethernet (10 or 100Mbit)
++#
++CONFIG_NET_ETHERNET=y
++# CONFIG_NET_VENDOR_3COM is not set
++# CONFIG_LANCE is not set
++# CONFIG_NET_VENDOR_SMC is not set
++# CONFIG_NET_VENDOR_RACAL is not set
++# CONFIG_AT1700 is not set
++# CONFIG_DEPCA is not set
++# CONFIG_HP100 is not set
++CONFIG_NET_ISA=y
++# CONFIG_E2100 is not set
++# CONFIG_EWRK3 is not set
++# CONFIG_EEXPRESS is not set
++# CONFIG_EEXPRESS_PRO is not set
++# CONFIG_HPLAN_PLUS is not set
++# CONFIG_HPLAN is not set
++# CONFIG_LP486E is not set
++# CONFIG_ETH16I is not set
++CONFIG_NE2000=y
++# CONFIG_NET_PCI is not set
++# CONFIG_NET_POCKET is not set
++
++#
++# Ethernet (1000 Mbit)
++#
++# CONFIG_ACENIC_OMIT_TIGON_I is not set
++# CONFIG_FDDI is not set
++# CONFIG_HIPPI is not set
++# CONFIG_PLIP is not set
++# CONFIG_PPP is not set
++# CONFIG_SLIP is not set
++
++#
++# Wireless LAN (non-hamradio)
++#
++# CONFIG_NET_RADIO is not set
++
++#
++# Token Ring devices
++#
++# CONFIG_TR is not set
++# CONFIG_NET_FC is not set
++# CONFIG_SHAPER is not set
++
++#
++# Wan interfaces
++#
++# CONFIG_WAN is not set
++
++#
++# Amateur Radio support
++#
++# CONFIG_HAMRADIO is not set
++
++#
++# IrDA (infrared) support
++#
++# CONFIG_IRDA is not set
++
++#
++# ATA/IDE/MFM/RLL support
++#
++CONFIG_IDE=y
++
++#
++# IDE, ATA and ATAPI Block devices
++#
++CONFIG_BLK_DEV_IDE=y
++
++#
++# Please see Documentation/ide.txt for help/info on IDE drives
++#
++# CONFIG_BLK_DEV_HD_IDE is not set
++# CONFIG_BLK_DEV_HD is not set
++CONFIG_BLK_DEV_IDEDISK=y
++# CONFIG_IDEDISK_MULTI_MODE is not set
++# CONFIG_BLK_DEV_IDEDISK_VENDOR is not set
++# CONFIG_BLK_DEV_COMMERIAL is not set
++# CONFIG_BLK_DEV_IDECD is not set
++# CONFIG_BLK_DEV_IDETAPE is not set
++# CONFIG_BLK_DEV_IDEFLOPPY is not set
++
++#
++# IDE chipset support/bugfixes
++#
++# CONFIG_BLK_DEV_CMD640 is not set
++# CONFIG_BLK_DEV_ISAPNP is not set
++# CONFIG_IDE_CHIPSETS is not set
++# CONFIG_IDEDMA_AUTO is not set
++# CONFIG_DMA_NONPCI is not set
++# CONFIG_BLK_DEV_IDE_MODES is not set
++# CONFIG_BLK_DEV_ATARAID is not set
++
++#
++# SCSI support
++#
++# CONFIG_SCSI is not set
++
++#
++# I2O device support
++#
++# CONFIG_I2O is not set
++
++#
++# ISDN subsystem
++#
++# CONFIG_ISDN is not set
++
++#
++# Input core support
++#
++# CONFIG_INPUT is not set
++CONFIG_INPUT_MOUSEDEV_SCREEN_X=1024
++CONFIG_INPUT_MOUSEDEV_SCREEN_Y=768
++
++#
++# Character devices
++#
++CONFIG_VT=y
++CONFIG_VT_CONSOLE=y
++CONFIG_SERIAL=y
++# CONFIG_SERIAL_CONSOLE is not set
++# CONFIG_SERIAL_EXTENDED is not set
++# CONFIG_SERIAL_NONSTANDARD is not set
++
++#
++# Serial drivers
++#
++# CONFIG_SERIAL_8250 is not set
++CONFIG_UNIX98_PTYS=y
++CONFIG_UNIX98_PTY_COUNT=256
++# CONFIG_PRINTER is not set
++CONFIG_PPDEV=m
++
++#
++# I2C support
++#
++# CONFIG_I2C is not set
++
++#
++# L3 serial bus support
++#
++# CONFIG_L3 is not set
++
++#
++# Other L3 adapters
++#
++# CONFIG_BIT_SA1100_GPIO is not set
++
++#
++# Mice
++#
++# CONFIG_BUSMOUSE is not set
++# CONFIG_MOUSE is not set
++
++#
++# Joysticks
++#
++# CONFIG_INPUT_GAMEPORT is not set
++
++#
++# Input core support is needed for gameports
++#
++
++#
++# Input core support is needed for joysticks
++#
++# CONFIG_QIC02_TAPE is not set
++
++#
++# Watchdog Cards
++#
++# CONFIG_WATCHDOG is not set
++# CONFIG_NVRAM is not set
++# CONFIG_RTC is not set
++# CONFIG_WEBPAL_RTC is not set
++# CONFIG_DTLK is not set
++# CONFIG_R3964 is not set
++# CONFIG_APPLICOM is not set
++
++#
++# Ftape, the floppy tape device driver
++#
++# CONFIG_FTAPE is not set
++# CONFIG_AGP is not set
++# CONFIG_DRM is not set
++# CONFIG_SLINK is not set
++
++#
++# Multimedia devices
++#
++# CONFIG_VIDEO_DEV is not set
++
++#
++# File systems
++#
++# CONFIG_QUOTA is not set
++CONFIG_AUTOFS_FS=m
++# CONFIG_AUTOFS4_FS is not set
++# CONFIG_REISERFS_FS is not set
++# CONFIG_ADFS_FS is not set
++# CONFIG_AFFS_FS is not set
++# CONFIG_HFS_FS is not set
++# CONFIG_BFS_FS is not set
++# CONFIG_EXT3_FS is not set
++# CONFIG_JBD is not set
++# CONFIG_FAT_FS is not set
++# CONFIG_EFS_FS is not set
++# CONFIG_JFFS_FS is not set
++# CONFIG_JFFS2_FS is not set
++CONFIG_CRAMFS=y
++# CONFIG_TMPFS is not set
++CONFIG_RAMFS=y
++# CONFIG_ISO9660_FS is not set
++CONFIG_MINIX_FS=y
++# CONFIG_VXFS_FS is not set
++# CONFIG_NTFS_FS is not set
++# CONFIG_HPFS_FS is not set
++CONFIG_PROC_FS=y
++# CONFIG_DEVFS_FS is not set
++CONFIG_DEVPTS_FS=y
++# CONFIG_QNX4FS_FS is not set
++# CONFIG_ROMFS_FS is not set
++CONFIG_EXT2_FS=y
++# CONFIG_SYSV_FS is not set
++# CONFIG_UDF_FS is not set
++# CONFIG_UFS_FS is not set
++
++#
++# Network File Systems
++#
++# CONFIG_CODA_FS is not set
++# CONFIG_INTERMEZZO_FS is not set
++# CONFIG_NFS_FS is not set
++CONFIG_NFSD=m
++CONFIG_NFSD_V3=y
++CONFIG_SUNRPC=m
++CONFIG_LOCKD=m
++CONFIG_LOCKD_V4=y
++# CONFIG_SMB_FS is not set
++# CONFIG_NCP_FS is not set
++# CONFIG_ZISOFS_FS is not set
++CONFIG_ZLIB_FS_INFLATE=y
++
++#
++# Partition Types
++#
++# CONFIG_PARTITION_ADVANCED is not set
++CONFIG_MSDOS_PARTITION=y
++# CONFIG_SMB_NLS is not set
++# CONFIG_NLS is not set
++
++#
++# Console drivers
++#
++# CONFIG_VGA_CONSOLE is not set
++
++#
++# Frame-buffer support
++#
++CONFIG_FB=y
++CONFIG_DUMMY_CONSOLE=y
++CONFIG_FB_WEBPAL=y
++CONFIG_ARCH_WEBPAL_IR_KEYB=y
++CONFIG_FB_ACORN=y
++# CONFIG_FB_VIRTUAL is not set
++# CONFIG_FBCON_ADVANCED is not set
++CONFIG_FBCON_MFB=y
++CONFIG_FBCON_CFB2=y
++CONFIG_FBCON_CFB4=y
++CONFIG_FBCON_CFB8=y
++# CONFIG_FBCON_FONTWIDTH8_ONLY is not set
++# CONFIG_FBCON_FONTS is not set
++CONFIG_FONT_8x8=y
++CONFIG_FONT_8x16=y
++
++#
++# Sound
++#
++CONFIG_SOUND=m
++# CONFIG_SOUND_BT878 is not set
++# CONFIG_SOUND_FUSION is not set
++# CONFIG_SOUND_CS4281 is not set
++# CONFIG_SOUND_ESSSOLO1 is not set
++# CONFIG_SOUND_MAESTRO is not set
++# CONFIG_SOUND_SONICVIBES is not set
++# CONFIG_SOUND_TRIDENT is not set
++# CONFIG_SOUND_MSNDCLAS is not set
++# CONFIG_SOUND_MSNDPIN is not set
++CONFIG_SOUND_OSS=m
++# CONFIG_SOUND_TRACEINIT is not set
++# CONFIG_SOUND_DMAP is not set
++# CONFIG_SOUND_AD1816 is not set
++# CONFIG_SOUND_SGALAXY is not set
++# CONFIG_SOUND_ADLIB is not set
++# CONFIG_SOUND_ACI_MIXER is not set
++# CONFIG_SOUND_CS4232 is not set
++# CONFIG_SOUND_SSCAPE is not set
++# CONFIG_SOUND_GUS is not set
++# CONFIG_SOUND_VMIDI is not set
++# CONFIG_SOUND_TRIX is not set
++# CONFIG_SOUND_MSS is not set
++# CONFIG_SOUND_MPU401 is not set
++# CONFIG_SOUND_NM256 is not set
++# CONFIG_SOUND_MAD16 is not set
++# CONFIG_SOUND_PAS is not set
++# CONFIG_SOUND_PSS is not set
++# CONFIG_SOUND_SB is not set
++# CONFIG_SOUND_AWE32_SYNTH is not set
++# CONFIG_SOUND_WAVEFRONT is not set
++# CONFIG_SOUND_MAUI is not set
++# CONFIG_SOUND_YM3812 is not set
++# CONFIG_SOUND_OPL3SA1 is not set
++# CONFIG_SOUND_OPL3SA2 is not set
++# CONFIG_SOUND_UART6850 is not set
++# CONFIG_SOUND_AEDSP16 is not set
++CONFIG_SOUND_VIDC=m
++
++#
++# Multimedia Capabilities Port drivers
++#
++# CONFIG_MCP is not set
++
++#
++# USB support
++#
++# CONFIG_USB is not set
++
++#
++# USB Controllers
++#
++
++#
++# USB Device Class drivers
++#
++
++#
++#   SCSI support is needed for USB Storage
++#
++
++#
++# USB Human Interface Devices (HID)
++#
++
++#
++#   Input core support is needed for USB HID
++#
++
++#
++# USB Imaging devices
++#
++
++#
++# USB Multimedia devices
++#
++
++#
++#   Video4Linux support is needed for USB Multimedia device support
++#
++
++#
++# USB Network adaptors
++#
++
++#
++# USB port drivers
++#
++
++#
++# USB Serial Converter support
++#
++
++#
++# USB Miscellaneous drivers
++#
++
++#
++# Bluetooth support
++#
++# CONFIG_BLUEZ is not set
++
++#
++# Kernel hacking
++#
++# CONFIG_NO_FRAME_POINTER is not set
++# CONFIG_DEBUG_USER is not set
++# CONFIG_DEBUG_INFO is not set
++CONFIG_DEBUG_KERNEL=y
++# CONFIG_DEBUG_SLAB is not set
++# CONFIG_MAGIC_SYSRQ is not set
++# CONFIG_DEBUG_SPINLOCK is not set
++# CONFIG_DEBUG_WAITQ is not set
++# CONFIG_DEBUG_BUGVERBOSE is not set
++# CONFIG_DEBUG_ERRORS is not set
++CONFIG_DEBUG_LL=y
+Files linux-orig-2.4.18-rmk4/core.3405 and linux-2.4.18-rmk4/core.3405 differ
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/Documentation/Configure.help linux-2.4.18-rmk4/Documentation/Configure.help
+--- linux-orig-2.4.18-rmk4/Documentation/Configure.help	2005-03-04 14:03:33.290892952 -0800
++++ linux-2.4.18-rmk4/Documentation/Configure.help	2003-11-10 12:49:19.000000000 -0800
+@@ -3970,6 +3970,20 @@
+   This is the frame buffer device driver for the Acorn VIDC graphics
+   hardware found in Acorn RISC PCs and other ARM-based machines.  If
+   unsure, say N.
++  
++Webpal Video support
++CONFIG_FB_WEBPAL
++  This is the frame buffer device driver for the Webpal graphics
++  hardware found in Webpal.   It also sets CONFIG_FB_ACORN to enable
++  the acorn VIDC graphic driver.   The Webpal PS-2 keyboard port is
++  also enabled.  If unsure, say Y.
++  
++Webpal IR keyboard support
++CONFIG_ARCH_WEBPAL_IR_KEYB
++  This enables support for the IR keyboard port on the Webpal.  If 
++  not enabled, the second serial port is available for use by Linux
++  user processes as /dev/ttyS1.   If enabled, /dev/ttyS1 is undefined.
++  If unsure, say N.
+ 
+ Permedia2 support
+ CONFIG_FB_PM2
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/acorn/char/defkeymap-webpal.c linux-2.4.18-rmk4/drivers/acorn/char/defkeymap-webpal.c
+--- linux-orig-2.4.18-rmk4/drivers/acorn/char/defkeymap-webpal.c	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/drivers/acorn/char/defkeymap-webpal.c	2003-03-08 10:08:25.000000000 -0800
+@@ -0,0 +1,261 @@
++/* Webpal keyboard map */
++
++#include <linux/types.h>
++#include <linux/keyboard.h>
++#include <linux/kd.h>
++
++u_short plain_map[NR_KEYS] = {
++	0xf01b,	0xf100,	0xf101,	0xf102,	0xf103,	0xf104,	0xf105,	0xf106,
++	0xf107,	0xf108,	0xf109,	0xf10a,	0xf10b,	0xf200,	0xf209,	0xf205,
++	0xf060,	0xf031,	0xf032,	0xf033,	0xf034,	0xf035,	0xf036,	0xf037,
++	0xf038,	0xf039,	0xf030,	0xf02d,	0xf03d,	0xf05c,	0xf07f,	0xf115,
++	0xf114,	0xf118,	0xf208,	0xf30d,	0xf30c,	0xf314,	0xf009,	0xfb71,
++	0xfb77,	0xfb65,	0xfb72,	0xfb74,	0xfb79,	0xfb75,	0xfb69,	0xfb6f,
++	0xfb70,	0xf05b,	0xf05d,	0xf05c,	0xf116,	0xf117,	0xf119,	0xf307,
++	0xf308,	0xf309,	0xf30b,	0xf702,	0xfb61,	0xfb73,	0xfb64,	0xfb66,
++	0xfb67,	0xfb68,	0xfb6a,	0xfb6b,	0xfb6c,	0xf03b,	0xf027,	0xf201,
++	0xf304,	0xf305,	0xf306,	0xf30a,	0xf700,	0xf200,	0xfb7a,	0xfb78,
++	0xfb63,	0xfb76,	0xfb62,	0xfb6e,	0xfb6d,	0xf02c,	0xf02e,	0xf02f,
++	0xf700,	0xf603,	0xf301,	0xf302,	0xf303,	0xf207,	0xf703,	0xf020,
++	0xf701,	0xf702,	0xf601,	0xf600,	0xf602,	0xf300,	0xf310,	0xf30e,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++};
++
++u_short shift_map[NR_KEYS] = {
++	0xf01b,	0xf10a,	0xf10b,	0xf10c,	0xf10d,	0xf10e,	0xf10f,	0xf110,
++	0xf111,	0xf112,	0xf113,	0xf10a,	0xf10b,	0xf200,	0xf203,	0xf205,
++	0xf07e,	0xf021,	0xf040,	0xf023,	0xf024,	0xf025,	0xf05e,	0xf026,
++	0xf02a,	0xf028,	0xf029,	0xf05f,	0xf02b,	0xf07c,	0xf07f,	0xf115,
++	0xf114,	0xf20b,	0xf208,	0xf30d,	0xf30c,	0xf314,	0xf009,	0xfb51,
++	0xfb57,	0xfb45,	0xfb52,	0xfb54,	0xfb59,	0xfb55,	0xfb49,	0xfb4f,
++	0xfb50,	0xf07b,	0xf07d,	0xf07c,	0xf116,	0xf117,	0xf20a,	0xf307,
++	0xf308,	0xf309,	0xf30b,	0xf702,	0xfb41,	0xfb53,	0xfb44,	0xfb46,
++	0xfb47,	0xfb48,	0xfb4a,	0xfb4b,	0xfb4c,	0xf03a,	0xf022,	0xf201,
++	0xf304,	0xf305,	0xf306,	0xf30a,	0xf700,	0xf200,	0xfb5a,	0xfb58,
++	0xfb43,	0xfb56,	0xfb42,	0xfb4e,	0xfb4d,	0xf03c,	0xf03e,	0xf03f,
++	0xf700,	0xf603,	0xf301,	0xf302,	0xf303,	0xf207,	0xf703,	0xf020,
++	0xf701,	0xf702,	0xf601,	0xf600,	0xf602,	0xf300,	0xf310,	0xf30e,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++};
++
++u_short altgr_map[NR_KEYS] = {
++	0xf200,	0xf50c,	0xf50d,	0xf50e,	0xf50f,	0xf510,	0xf511,	0xf512,
++	0xf513,	0xf514,	0xf515,	0xf516,	0xf517,	0xf200,	0xf202,	0xf205,
++	0xf200,	0xf200,	0xf040,	0xf200,	0xf024,	0xf200,	0xf200,	0xf07b,
++	0xf05b,	0xf05d,	0xf07d,	0xf05c,	0xf200,	0xf200,	0xf200,	0xf115,
++	0xf114,	0xf118,	0xf208,	0xf30d,	0xf30c,	0xf314,	0xf200,	0xfb71,
++	0xfb77,	0xf918,	0xfb72,	0xfb74,	0xfb79,	0xfb75,	0xfb69,	0xfb6f,
++	0xfb70,	0xf200,	0xf07e,	0xf200,	0xf116,	0xf117,	0xf119,	0xf911,
++	0xf912,	0xf913,	0xf30b,	0xf702,	0xf914,	0xfb73,	0xf917,	0xf919,
++	0xfb67,	0xfb68,	0xfb6a,	0xfb6b,	0xfb6c,	0xf200,	0xf200,	0xf201,
++	0xf90e,	0xf90f,	0xf910,	0xf30a,	0xf700,	0xf200,	0xfb7a,	0xfb78,
++	0xf916,	0xfb76,	0xf915,	0xfb6e,	0xfb6d,	0xf200,	0xf200,	0xf200,
++	0xf700,	0xf603,	0xf90b,	0xf90c,	0xf90d,	0xf207,	0xf703,	0xf200,
++	0xf701,	0xf702,	0xf601,	0xf600,	0xf602,	0xf90a,	0xf310,	0xf30e,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++};
++
++u_short ctrl_map[NR_KEYS] = {
++	0xf200,	0xf100,	0xf101,	0xf102,	0xf103,	0xf104,	0xf105,	0xf106,
++	0xf107,	0xf108,	0xf109,	0xf10a,	0xf10b,	0xf200,	0xf204,	0xf205,
++	0xf200,	0xf200,	0xf000,	0xf01b,	0xf01c,	0xf01d,	0xf01e,	0xf01f,
++	0xf07f,	0xf200,	0xf200,	0xf01f,	0xf200,	0xf200,	0xf008,	0xf115,
++	0xf114,	0xf118,	0xf208,	0xf30d,	0xf30c,	0xf314,	0xf200,	0xf011,
++	0xf017,	0xf005,	0xf012,	0xf014,	0xf019,	0xf015,	0xf009,	0xf00f,
++	0xf010,	0xf01b,	0xf01d,	0xf01c,	0xf116,	0xf117,	0xf119,	0xf307,
++	0xf308,	0xf309,	0xf30b,	0xf702,	0xf001,	0xf013,	0xf004,	0xf006,
++	0xf007,	0xf008,	0xf00a,	0xf00b,	0xf00c,	0xf200,	0xf007,	0xf201,
++	0xf304,	0xf305,	0xf306,	0xf30a,	0xf700,	0xf200,	0xf01a,	0xf018,
++	0xf003,	0xf016,	0xf002,	0xf00e,	0xf00d,	0xf200,	0xf20e,	0xf07f,
++	0xf700,	0xf603,	0xf301,	0xf302,	0xf303,	0xf207,	0xf703,	0xf000,
++	0xf701,	0xf702,	0xf601,	0xf600,	0xf602,	0xf300,	0xf310,	0xf30e,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++};
++
++u_short shift_ctrl_map[NR_KEYS] = {
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf209,	0xf205,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf01f,	0xf200,	0xf200,	0xf200,	0xf115,
++	0xf114,	0xf118,	0xf208,	0xf30d,	0xf30c,	0xf314,	0xf200,	0xf011,
++	0xf017,	0xf005,	0xf012,	0xf014,	0xf019,	0xf015,	0xf009,	0xf00f,
++	0xf010,	0xf200,	0xf200,	0xf200,	0xf116,	0xf117,	0xf119,	0xf307,
++	0xf308,	0xf309,	0xf30b,	0xf702,	0xf001,	0xf013,	0xf004,	0xf006,
++	0xf007,	0xf008,	0xf00a,	0xf00b,	0xf00c,	0xf200,	0xf200,	0xf201,
++	0xf304,	0xf305,	0xf306,	0xf30a,	0xf700,	0xf200,	0xf01a,	0xf018,
++	0xf003,	0xf016,	0xf002,	0xf00e,	0xf00d,	0xf200,	0xf200,	0xf200,
++	0xf700,	0xf603,	0xf301,	0xf302,	0xf303,	0xf207,	0xf703,	0xf200,
++	0xf701,	0xf702,	0xf601,	0xf600,	0xf602,	0xf300,	0xf310,	0xf30e,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++};
++
++u_short alt_map[NR_KEYS] = {
++	0xf81b,	0xf500,	0xf501,	0xf502,	0xf503,	0xf504,	0xf505,	0xf506,
++	0xf507,	0xf508,	0xf509,	0xf50a,	0xf50b,	0xf200,	0xf209,	0xf205,
++	0xf860,	0xf831,	0xf832,	0xf833,	0xf834,	0xf835,	0xf836,	0xf837,
++	0xf838,	0xf839,	0xf830,	0xf82d,	0xf83d,	0xf8a3,	0xf87f,	0xf115,
++	0xf114,	0xf118,	0xf208,	0xf30d,	0xf30c,	0xf314,	0xf809,	0xf871,
++	0xf877,	0xf865,	0xf872,	0xf874,	0xf879,	0xf875,	0xf869,	0xf86f,
++	0xf870,	0xf85b,	0xf85d,	0xf85c,	0xf116,	0xf117,	0xf119,	0xf907,
++	0xf908,	0xf909,	0xf30b,	0xf702,	0xf861,	0xf873,	0xf864,	0xf866,
++	0xf867,	0xf868,	0xf86a,	0xf86b,	0xf86c,	0xf83b,	0xf827,	0xf80d,
++	0xf904,	0xf905,	0xf906,	0xf30a,	0xf700,	0xf200,	0xf87a,	0xf878,
++	0xf863,	0xf876,	0xf862,	0xf86e,	0xf86d,	0xf82c,	0xf82e,	0xf82f,
++	0xf700,	0xf603,	0xf901,	0xf902,	0xf903,	0xf207,	0xf703,	0xf820,
++	0xf701,	0xf702,	0xf210,	0xf600,	0xf211,	0xf900,	0xf310,	0xf30e,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++};
++
++u_short ctrl_alt_map[NR_KEYS] = {
++	0xf200,	0xf500,	0xf501,	0xf502,	0xf503,	0xf504,	0xf505,	0xf506,
++	0xf507,	0xf508,	0xf509,	0xf50a,	0xf50b,	0xf200,	0xf209,	0xf205,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf115,
++	0xf114,	0xf118,	0xf208,	0xf30d,	0xf30c,	0xf314,	0xf200,	0xf811,
++	0xf817,	0xf805,	0xf812,	0xf814,	0xf819,	0xf815,	0xf809,	0xf80f,
++	0xf810,	0xf200,	0xf200,	0xf200,	0xf20c,	0xf117,	0xf119,	0xf307,
++	0xf308,	0xf309,	0xf30b,	0xf702,	0xf801,	0xf813,	0xf804,	0xf806,
++	0xf807,	0xf808,	0xf80a,	0xf80b,	0xf80c,	0xf200,	0xf200,	0xf201,
++	0xf304,	0xf305,	0xf306,	0xf30a,	0xf700,	0xf200,	0xf81a,	0xf818,
++	0xf803,	0xf816,	0xf802,	0xf80e,	0xf80d,	0xf200,	0xf200,	0xf200,
++	0xf700,	0xf603,	0xf301,	0xf302,	0xf303,	0xf207,	0xf703,	0xf200,
++	0xf701,	0xf702,	0xf601,	0xf600,	0xf602,	0xf300,	0xf20c,	0xf30e,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,	0xf200,
++};
++
++ushort *key_maps[MAX_NR_KEYMAPS] = {
++	plain_map, shift_map, altgr_map, 0,
++	ctrl_map, shift_ctrl_map, 0, 0,
++	alt_map, 0, 0, 0,
++	ctrl_alt_map,	0
++};
++
++unsigned int keymap_count = 7;
++
++/*
++ * Philosophy: most people do not define more strings, but they who do
++ * often want quite a lot of string space. So, we statically allocate
++ * the default and allocate dynamically in chunks of 512 bytes.
++ */
++
++char func_buf[] = {
++	'\033', '[', '[', 'A', 0, 
++	'\033', '[', '[', 'B', 0, 
++	'\033', '[', '[', 'C', 0, 
++	'\033', '[', '[', 'D', 0, 
++	'\033', '[', '[', 'E', 0, 
++	'\033', '[', '1', '7', '~', 0, 
++	'\033', '[', '1', '8', '~', 0, 
++	'\033', '[', '1', '9', '~', 0, 
++	'\033', '[', '2', '0', '~', 0, 
++	'\033', '[', '2', '1', '~', 0, 
++	'\033', '[', '2', '3', '~', 0, 
++	'\033', '[', '2', '4', '~', 0, 
++	'\033', '[', '2', '5', '~', 0, 
++	'\033', '[', '2', '6', '~', 0, 
++	'\033', '[', '2', '8', '~', 0, 
++	'\033', '[', '2', '9', '~', 0, 
++	'\033', '[', '3', '1', '~', 0, 
++	'\033', '[', '3', '2', '~', 0, 
++	'\033', '[', '3', '3', '~', 0, 
++	'\033', '[', '3', '4', '~', 0, 
++	'\033', '[', '1', '~', 0, 
++	'\033', '[', '2', '~', 0, 
++	'\033', '[', '3', '~', 0, 
++	'\033', '[', '4', '~', 0, 
++	'\033', '[', '5', '~', 0, 
++	'\033', '[', '6', '~', 0, 
++	'\033', '[', 'M', 0, 
++	'\033', '[', 'P', 0, 
++};
++
++char *funcbufptr = func_buf;
++int funcbufsize = sizeof(func_buf);
++int funcbufleft = 0;          /* space left */
++
++char *func_table[MAX_NR_FUNC] = {
++	func_buf + 0,
++	func_buf + 5,
++	func_buf + 10,
++	func_buf + 15,
++	func_buf + 20,
++	func_buf + 25,
++	func_buf + 31,
++	func_buf + 37,
++	func_buf + 43,
++	func_buf + 49,
++	func_buf + 55,
++	func_buf + 61,
++	func_buf + 67,
++	func_buf + 73,
++	func_buf + 79,
++	func_buf + 85,
++	func_buf + 91,
++	func_buf + 97,
++	func_buf + 103,
++	func_buf + 109,
++	func_buf + 115,
++	func_buf + 120,
++	func_buf + 125,
++	func_buf + 130,
++	func_buf + 135,
++	func_buf + 140,
++	func_buf + 145,
++	0,
++	0,
++	func_buf + 149,
++	0,
++};
++
++struct kbdiacr accent_table[MAX_DIACR] = {
++	{'`', 'A', '\300'},	{'`', 'a', '\340'},
++	{'\'', 'A', '\301'},	{'\'', 'a', '\341'},
++	{'^', 'A', '\302'},	{'^', 'a', '\342'},
++	{'~', 'A', '\303'},	{'~', 'a', '\343'},
++	{'"', 'A', '\304'},	{'"', 'a', '\344'},
++	{'O', 'A', '\305'},	{'o', 'a', '\345'},
++	{'0', 'A', '\305'},	{'0', 'a', '\345'},
++	{'A', 'A', '\305'},	{'a', 'a', '\345'},
++	{'A', 'E', '\306'},	{'a', 'e', '\346'},
++	{',', 'C', '\307'},	{',', 'c', '\347'},
++	{'`', 'E', '\310'},	{'`', 'e', '\350'},
++	{'\'', 'E', '\311'},	{'\'', 'e', '\351'},
++	{'^', 'E', '\312'},	{'^', 'e', '\352'},
++	{'"', 'E', '\313'},	{'"', 'e', '\353'},
++	{'`', 'I', '\314'},	{'`', 'i', '\354'},
++	{'\'', 'I', '\315'},	{'\'', 'i', '\355'},
++	{'^', 'I', '\316'},	{'^', 'i', '\356'},
++	{'"', 'I', '\317'},	{'"', 'i', '\357'},
++	{'-', 'D', '\320'},	{'-', 'd', '\360'},
++	{'~', 'N', '\321'},	{'~', 'n', '\361'},
++	{'`', 'O', '\322'},	{'`', 'o', '\362'},
++	{'\'', 'O', '\323'},	{'\'', 'o', '\363'},
++	{'^', 'O', '\324'},	{'^', 'o', '\364'},
++	{'~', 'O', '\325'},	{'~', 'o', '\365'},
++	{'"', 'O', '\326'},	{'"', 'o', '\366'},
++	{'/', 'O', '\330'},	{'/', 'o', '\370'},
++	{'`', 'U', '\331'},	{'`', 'u', '\371'},
++	{'\'', 'U', '\332'},	{'\'', 'u', '\372'},
++	{'^', 'U', '\333'},	{'^', 'u', '\373'},
++	{'"', 'U', '\334'},	{'"', 'u', '\374'},
++	{'\'', 'Y', '\335'},	{'\'', 'y', '\375'},
++	{'T', 'H', '\336'},	{'t', 'h', '\376'},
++	{'s', 's', '\337'},	{'"', 'y', '\377'},
++	{'s', 'z', '\337'},	{'i', 'j', '\377'},
++};
++
++unsigned int accent_table_size = 68;
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/acorn/char/keyb_ps2.c linux-2.4.18-rmk4/drivers/acorn/char/keyb_ps2.c
+--- linux-orig-2.4.18-rmk4/drivers/acorn/char/keyb_ps2.c	2001-10-25 13:53:46.000000000 -0700
++++ linux-2.4.18-rmk4/drivers/acorn/char/keyb_ps2.c	2003-03-08 10:34:58.000000000 -0800
+@@ -38,6 +38,12 @@
+ extern struct tasklet_struct keyboard_tasklet;
+ extern void kbd_reset_kdown(void);
+ int kbd_read_mask;
++static int ps2_keyboard_present;
++
++static unsigned char status;
++static unsigned char ncodes;
++static unsigned char bi;
++static unsigned char buffer[4];
+ 
+ #define TX_DONE 0
+ #define TX_SENT 1
+@@ -56,6 +62,23 @@
+ #define ESCE0(x)	(0xe000|(x))
+ #define ESCE1(x)	(0xe100|(x))
+ 
++#ifdef CONFIG_ARCH_WEBPAL_IR_KEYB
++
++#include <linux/serial_reg.h>
++
++#define IR_ADDR         0x3f8
++#define IR_READ(x)      inb(IR_ADDR + (x))
++#define IR_WRITE(x,val) outb(val, IR_ADDR + (x))
++
++#define CUR_DIR         0x31
++#define REM_DOWN        0x32
++#define KEY_KEY         0x33
++#define KEY_UP          0x34
++
++#define AUTO_REP_INT	10	/* Number of jiffies per key auto-repeat interval */
++
++#endif
++
+ #define KBD_BAT		0xaa		/* in */
+ #define KBD_SETLEDS	0xed		/* out */
+ #define KBD_ECHO	0xee		/* in/out */
+@@ -212,6 +235,49 @@
+ 	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE
+ };
+ 
++#ifdef CONFIG_ARCH_WEBPAL_IR_KEYB
++static unsigned char wpal_keycode_translate[128] =
++{
++/* 00 */  K_NONE, K_NONE, K_NONE, K_NONE, K_AGR , K_NONE, K_NONE, K_NONE,
++/* 08 */  K_NONE, K_CAPS, K_X   , K_F5  , K_F1  , K_2   , K_S   , K_W   ,
++/* 10 */  K_NONE, K_F3  , K_C   , K_F4  , K_F2  , K_3   , K_D   , K_E   ,
++/* 18 */  K_LALT, K_TAB , K_Z   , K_NONE, K_NONE, K_1   , K_A   , K_Q   ,
++/* 20 */  K_B   , K_T   , K_V   , K_G   , K_5   , K_4   , K_F   , K_R   ,
++/* 28 */  K_RALT, K_ESC , K_NONE, K_LCTL, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 30 */  K_NONE, K_LSFT, K_RSFT, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 38 */  K_SPCE, K_BKSP, K_ENTR, K_F6  , K_F9  , K_F10 , K_BSLH, K_NONE,
++/* 40 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 48 */  K_LEFT, K_NONE, K_NONE, K_UP  , K_INS , K_NONE, K_DEL , K_NONE,
++/* 50 */  K_DOWN, K_NONE, K_NONE, K_NONE, K_NONE, K_F11 , K_PGUP, K_NONE,
++/* 58 */  K_RGHT, K_NONE, K_NONE, K_PGDN, K_NONE, K_F12 , K_NONE, K_NONE,
++/* 60 */  K_NONE, K_F7  , K_DOT , K_NONE, K_F8  , K_9   , K_L   , K_O   ,
++/* 68 */  K_FSLH, K_LSBK, K_NONE, K_SQOT, K_MINS, K_0   , K_SEMI, K_P   ,
++/* 70 */  K_NONE, K_RSBK, K_COMA, K_EQLS, K_EQLS, K_8   , K_K   , K_I   ,
++/* 78 */  K_N   , K_Y   , K_M   , K_H   , K_6   , K_7   , K_J   , K_U   
++};
++
++static unsigned char remcode_translate[128] =
++{
++/* 00 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 08 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 10 */  K_NONE, K_NONE, K_NONE, K_NONE, K_3   , K_1   , K_2   , K_6   ,
++/* 18 */  K_4   , K_5   , K_9   , K_8   , K_7   , K_0   , K_HASH, K_NONE,
++/* 20 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 28 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 30 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 38 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 40 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 48 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 50 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 58 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 60 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 68 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 70 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 78 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE
++};
++
++#endif
++
+ #ifdef CONFIG_MAGIC_SYSRQ
+ static unsigned char ps2kbd_sysrq_xlate[] = 
+ {
+@@ -239,10 +305,175 @@
+ 	handle_scancode(keycode, !up_flag);
+ }
+ 
++#ifdef CONFIG_ARCH_WEBPAL_IR_KEYB
++
++static inline void webpal_irkbd_sendbyte(unsigned char val)
++{
++}
++
++static int keysym = K_NONE;
++static int lastKey = 0x80;
++
++/* The following variables are used by the key-rollover filter */
++
++static long long current_jiffies = 0;	/* Timestamp of current key (n) */
++static long long jiffies_minus_1 = 0;	/* Timestamp of key n-1 */
++static long long jiffies_minus_2 = 0;	/* Timestamp of key n-2 */
++static int keysym_minus_1 = K_NONE;	/* Key n-1 value */
++static int keysym_minus_2 = K_NONE;	/* Key n-2 value */
++static int key_filter = 0;		/* Specifies whether keyboard filtering is in effect */
++
++static inline void webpal_irkbd_reset(void)
++{
++	status = 0;
++	keysym = K_NONE;
++	kbd_reset_kdown();
++}
++
++static void handle_wpal_rawcode(int keyval)
++{
++	if (ncodes == 0) {
++		switch (keyval) {
++
++		case KEY_KEY:
++		case REM_DOWN:
++		case KEY_UP:
++		case CUR_DIR:
++			ncodes = 2;
++			bi = 0;
++			break;
++
++		default:
++			printk("Keyboard error %x\n", keyval);
++			return;
++		}
++	} 
++
++	buffer[bi++] = keyval;
++	ncodes -= 1;
++	if (ncodes)
++		return;
++		
++	switch (buffer[0]) {
++
++	case KEY_KEY:
++		if (buffer[1] == 0x80) {
++			lastKey = 0x80;
++			kbd_reset_kdown();
++			return;
++		}
++
++		if (buffer[1] == lastKey)
++			return;
++	
++		if (buffer[1] & 0x80) {
++			status |= CODE_BREAK;
++			lastKey = 0x80;
++		} else {
++			lastKey = buffer[1];
++		}
++
++		keysym = wpal_keycode_translate[buffer[1] & 0x7f];
++
++		break;
++
++	case REM_DOWN:
++		keysym = remcode_translate[buffer[1] & 0x7f];
++		status = 0;
++		break;
++		
++	case KEY_UP:
++		if (buffer[1] == 0x0d)
++			kbd_reset_kdown();
++		status = 0;
++		return; 
++		
++	case CUR_DIR:
++		printk("Cursor direction %x\n", buffer[1]);
++		status = 0;
++		return;
++	}	
++
++	if (keysym != K_NONE)
++		ps2kbd_key(keysym, status & CODE_BREAK);
++	status = 0;
++}
++
++static void webpal_irkbd_rx(int irq, void *dev_id, struct pt_regs *regs)
++{
++	unsigned char ircode;
++
++	kbd_pt_regs = regs;
++
++	while (IR_READ(UART_LSR) & UART_LSR_DR)
++	{
++		handle_wpal_rawcode((ircode = IR_READ(UART_RX)) & 0xff);
++	//	printk(KERN_CRIT "ircode: %02x\n", ircode );
++	}
++
++	/* Take a snapshot of the current jiffies counter */
++
++	current_jiffies = jiffies;
++
++	/* Determine whether we should enter key filtering mode.
++	 *
++	 * The Webpal IR keyboard hardware appears to have a bug
++	 * in the way it handles key-rollover.  When a key ("key 2")
++	 * is pressed before the previous key ("key 1") is released,
++	 * key 2 incorrectly starts auto-repeating as soon as key 1
++	 * is released.  When this happens, the behavior seen on the
++	 * IR serial port is as follows:  the key code for key 2
++	 * seems to come in less than one auto-repeat interval 
++	 * after the key code for key 1.  Immediately thereafter,
++	 * additional keycodes for key 2 are received at the auto-
++	 * repeat interval (~10 jiffies).  The following code watches
++	 * for this behavior and enters a "key filtering" state
++	 * when it is detected.  While the driver is in this state
++	 * all key codes received are discarded.  This state is left
++	 * when two consecutive key codes are received at an interval
++	 * that is greater than the auto repeat interval.
++	 *
++	 * This algorithm is based on experimenting with the IR
++	 * keyboard and watching the codes (and timing thereof)
++	 * received on the IR serial port.  It probably has some
++	 * holes and could probably be improved.
++	 */
++
++	if (((current_jiffies - jiffies_minus_1) < (int)(1.5 * AUTO_REP_INT))
++	   && (keysym == keysym_minus_1)
++	   && ((jiffies_minus_1 - jiffies_minus_2) < (int)(1.5 * AUTO_REP_INT))
++	   && (keysym_minus_1 != keysym_minus_2))
++		key_filter = 1;
++
++	/* Check whether key filtering mode should be left */
++
++	if ((current_jiffies - jiffies_minus_1) > (int)(1.5 * AUTO_REP_INT))
++		key_filter = 0;
++
++	/* Allow key through only if filtering is not in effect */
++
++	if (key_filter == 0)
++	  tasklet_schedule(&keyboard_tasklet);
++
++	/* Update timestamps and key values */
++
++	jiffies_minus_2 = jiffies_minus_1;
++	jiffies_minus_1 = current_jiffies;
++
++	keysym_minus_2 = keysym_minus_1;
++	keysym_minus_1 = keysym;
++	
++	IR_WRITE(UART_IER, UART_IER_RDI);
++}
++
++#endif
++
+ static inline void ps2kbd_sendbyte(unsigned char val)
+ {
+ 	int tries = 3, timeout = 1000;
+ 
++        if( ps2_keyboard_present )
++        {
+ 	tx_state = TX_SEND;
+ 
+ 	do {
+@@ -261,6 +492,7 @@
+ 			if (--timeout == 0) {
+ 				printk(KERN_ERR "Keyboard timeout\n");
+ 				tx_state = TX_DONE;
++        				ps2_keyboard_present = 0;
+ 			}
+ 			break;
+ 
+@@ -268,13 +500,11 @@
+ 			break;
+ 		}
+ 	} while (tries > 0 && tx_state != TX_DONE);
++        }
++        else
++        	tx_state = TX_DONE;
+ }
+ 
+-static unsigned char status;
+-static unsigned char ncodes;
+-static unsigned char bi;
+-static unsigned char buffer[4];
+-
+ static inline void ps2kbd_reset(void)
+ {
+ 	status = 0;
+@@ -373,7 +603,10 @@
+ 	kbd_pt_regs = regs;
+ 
+ 	while (iomd_readb(IOMD_KCTRL) & (1 << 5))
++	{
+ 		handle_rawcode(iomd_readb(IOMD_KARTRX));
++		ps2_keyboard_present = 1;
++	}
+ 	tasklet_schedule(&keyboard_tasklet);
+ }
+ 
+@@ -399,6 +632,26 @@
+ 	iomd_writeb(8, IOMD_KCTRL);
+ 	iomd_readb(IOMD_KARTRX);
+ 
++#ifdef CONFIG_ARCH_WEBPAL_IR_KEYB
++        /* Initialize the IR uart */
++	
++	IR_WRITE(UART_IER, 0);
++	IR_WRITE(UART_LCR, UART_LCR_WLEN8);
++	IR_WRITE(UART_LCR, UART_LCR_WLEN8 | UART_LCR_DLAB);
++	IR_WRITE(UART_DLL, 12);
++	IR_WRITE(UART_DLM, 0);
++	IR_WRITE(UART_LCR, UART_LCR_WLEN8);
++	IR_WRITE(UART_FCR, UART_FCR_ENABLE_FIFO |
++		UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT);
++	IR_WRITE(UART_MCR, UART_MCR_OUT2 /* | UART_MCR_RTS | UART_MCR_DTR */);
++	IR_WRITE(UART_IER, UART_IER_RDI);
++
++	IR_WRITE(UART_TX, 0x11);
++	IR_WRITE(UART_TX, 0x0d);
++	if (request_irq (IRQ_INT6, webpal_irkbd_rx, 0, "IR keyboard", NULL) != 0)
++		panic("Could not allocate Webpal keyboard receive IRQ!");
++#endif
++
+ 	if (request_irq (IRQ_KEYBOARDRX, ps2kbd_rx, 0, "keyboard", NULL) != 0)
+ 		panic("Could not allocate keyboard receive IRQ!");
+ 	if (request_irq (IRQ_KEYBOARDTX, ps2kbd_tx, 0, "keyboard", NULL) != 0)
+@@ -411,6 +664,7 @@
+ 	k_sysrq_xlate	= ps2kbd_sysrq_xlate;
+ 	k_sysrq_key	= 13;
+ #endif
++	ps2_keyboard_present = 1;
+ 
+ 	return 0;
+ }
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/acorn/char/Makefile linux-2.4.18-rmk4/drivers/acorn/char/Makefile
+--- linux-orig-2.4.18-rmk4/drivers/acorn/char/Makefile	2001-08-12 10:38:48.000000000 -0700
++++ linux-2.4.18-rmk4/drivers/acorn/char/Makefile	2004-03-24 19:41:57.000000000 -0800
+@@ -24,12 +24,15 @@
+ obj-arc		:= keyb_arc.o
+ obj-rpc		:= keyb_ps2.o
+ obj-clps7500	:= keyb_ps2.o defkeymap-acorn.o
++obj-webpal	:=
++
+ 
+ obj-$(CONFIG_RPCMOUSE)		+= mouse_rpc.o
+ obj-$(CONFIG_ATOMWIDE_SERIAL)	+= serial-atomwide.o
+ obj-$(CONFIG_DUALSP_SERIAL)	+= serial-dualsp.o
+ obj-$(CONFIG_ARCH_ACORN)	+= defkeymap-acorn.o i2c.o pcf8583.o
+ obj-$(CONFIG_L7200_KEYB)	+= defkeymap-l7200.o keyb_l7200.o
++obj-$(CONFIG_FB_WEBPAL) 	+= webpal_irkbd.o defkeymap-webpal.o mouse_ps2.o
+ 
+ # Do the i2c and rtc last
+ obj-y		+= $(obj-$(MACHINE))
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/acorn/char/mouse_ps2.c linux-2.4.18-rmk4/drivers/acorn/char/mouse_ps2.c
+--- linux-orig-2.4.18-rmk4/drivers/acorn/char/mouse_ps2.c	2005-03-04 14:03:33.495861792 -0800
++++ linux-2.4.18-rmk4/drivers/acorn/char/mouse_ps2.c	2003-03-08 10:08:25.000000000 -0800
+@@ -286,3 +286,7 @@
+ 
+ 	return 0;
+ }
++
++module_init(psaux_init);
++
++
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/acorn/char/webpal_irkbd.c linux-2.4.18-rmk4/drivers/acorn/char/webpal_irkbd.c
+--- linux-orig-2.4.18-rmk4/drivers/acorn/char/webpal_irkbd.c	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/drivers/acorn/char/webpal_irkbd.c	2003-11-20 15:35:11.000000000 -0800
+@@ -0,0 +1,670 @@
++/*
++ *  linux/drivers/acorn/char/keyb_ps2.c
++ *
++ *  Copyright (C) 2000 Russell King
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ *  Keyboard driver for RiscPC ARM Linux.
++ *
++ *  Note!!! This driver talks directly to the keyboard.
++ */
++#include <linux/config.h>
++#include <linux/sched.h>
++#include <linux/interrupt.h>
++#include <linux/tty.h>
++#include <linux/tty_flip.h>
++#include <linux/mm.h>
++#include <linux/slab.h>
++#include <linux/ptrace.h>
++#include <linux/signal.h>
++#include <linux/timer.h>
++#include <linux/random.h>
++#include <linux/ctype.h>
++#include <linux/kbd_ll.h>
++#include <linux/delay.h>
++#include <linux/init.h>
++
++#include <asm/bitops.h>
++#include <asm/irq.h>
++#include <asm/hardware.h>
++#include <asm/keyboard.h>
++#include <asm/io.h>
++#include <asm/hardware/iomd.h>
++#include <asm/system.h>
++
++extern struct tasklet_struct keyboard_tasklet;
++extern void kbd_reset_kdown(void);
++int kbd_read_mask;
++static int ps2_keyboard_present;
++
++static unsigned char status;
++static unsigned char ncodes;
++static unsigned char bi;
++static unsigned char buffer[4];
++
++#define TX_DONE 0
++#define TX_SENT 1
++#define TX_SEND 2
++
++static volatile int tx_state;
++
++#define VERSION 100
++
++#define KBD_REPORT_ERR
++#define KBD_REPORT_UNKN
++
++#define KBD_ESCAPEE0	0xe0		/* in */
++#define KBD_ESCAPEE1	0xe1		/* in */
++
++#define ESCE0(x)	(0xe000|(x))
++#define ESCE1(x)	(0xe100|(x))
++
++#ifdef CONFIG_ARCH_WEBPAL_IR_KEYB
++
++#include <linux/serial_reg.h>
++
++#define IR_ADDR         0x3f8
++#define IR_READ(x)      inb(IR_ADDR + (x))
++#define IR_WRITE(x,val) outb(val, IR_ADDR + (x))
++
++#define CUR_DIR         0x31
++#define REM_DOWN        0x32
++#define KEY_KEY         0x33
++#define KEY_UP          0x34
++
++#define AUTO_REP_INT	10	/* Number of jiffies per key auto-repeat interval */
++
++#endif
++
++#define KBD_BAT		0xaa		/* in */
++#define KBD_SETLEDS	0xed		/* out */
++#define KBD_ECHO	0xee		/* in/out */
++#define KBD_BREAK	0xf0		/* in */
++#define KBD_TYPRATEDLY	0xf3		/* out */
++#define KBD_SCANENABLE	0xf4		/* out */
++#define KBD_DEFDISABLE	0xf5		/* out */
++#define KBD_DEFAULT	0xf6		/* out */
++#define KBD_ACK		0xfa		/* in */
++#define KBD_DIAGFAIL	0xfd		/* in */
++#define KBD_RESEND	0xfe		/* in/out */
++#define KBD_RESET	0xff		/* out */
++
++#define CODE_BREAK	1
++#define CODE_ESCAPEE0	2
++#define CODE_ESCAPEE1	4
++#define CODE_ESCAPE12	8
++
++#define K_NONE		0x7f
++#define K_ESC		0x00
++#define K_F1		0x01
++#define K_F2		0x02
++#define K_F3		0x03
++#define K_F4		0x04
++#define K_F5		0x05
++#define K_F6		0x06
++#define K_F7		0x07
++#define K_F8		0x08
++#define K_F9		0x09
++#define K_F10		0x0a
++#define K_F11		0x0b
++#define K_F12		0x0c
++#define K_PRNT		0x0d
++#define K_SCRL		0x0e
++#define K_BRK		0x0f
++#define K_AGR		0x10
++#define K_1		0x11
++#define K_2		0x12
++#define K_3		0x13
++#define K_4		0x14
++#define K_5		0x15
++#define K_6		0x16
++#define K_7		0x17
++#define K_8		0x18
++#define K_9		0x19
++#define K_0		0x1a
++#define K_MINS		0x1b
++#define K_EQLS		0x1c
++#define K_BKSP		0x1e
++#define K_INS		0x1f
++#define K_HOME		0x20
++#define K_PGUP		0x21
++#define K_NUML		0x22
++#define KP_SLH		0x23
++#define KP_STR		0x24
++#define KP_MNS		0x3a
++#define K_TAB		0x26
++#define K_Q		0x27
++#define K_W		0x28
++#define K_E		0x29
++#define K_R		0x2a
++#define K_T		0x2b
++#define K_Y		0x2c
++#define K_U		0x2d
++#define K_I		0x2e
++#define K_O		0x2f
++#define K_P		0x30
++#define K_LSBK		0x31
++#define K_RSBK		0x32
++#define K_ENTR		0x47
++#define K_DEL		0x34
++#define K_END		0x35
++#define K_PGDN		0x36
++#define KP_7		0x37
++#define KP_8		0x38
++#define KP_9		0x39
++#define KP_PLS		0x4b
++#define K_CAPS		0x5d
++#define K_A		0x3c
++#define K_S		0x3d
++#define K_D		0x3e
++#define K_F		0x3f
++#define K_G		0x40
++#define K_H		0x41
++#define K_J		0x42
++#define K_K		0x43
++#define K_L		0x44
++#define K_SEMI		0x45
++#define K_SQOT		0x46
++#define K_HASH		0x1d
++#define KP_4		0x48
++#define KP_5		0x49
++#define KP_6		0x4a
++#define K_LSFT		0x4c
++#define K_BSLH		0x33
++#define K_Z		0x4e
++#define K_X		0x4f
++#define K_C		0x50
++#define K_V		0x51
++#define K_B		0x52
++#define K_N		0x53
++#define K_M		0x54
++#define K_COMA		0x55
++#define K_DOT		0x56
++#define K_FSLH		0x57
++#define K_RSFT		0x58
++#define K_UP		0x59
++#define KP_1		0x5a
++#define KP_2		0x5b
++#define KP_3		0x5c
++#define KP_ENT		0x67
++#define K_LCTL		0x3b
++#define K_LALT		0x5e
++#define K_SPCE		0x5f
++#define K_RALT		0x60
++#define K_RCTL		0x61
++#define K_LEFT		0x62
++#define K_DOWN		0x63
++#define K_RGHT		0x64
++#define KP_0		0x65
++#define KP_DOT		0x66
++
++static unsigned char keycode_translate[256] =
++{
++/* 00 */  K_NONE, K_F9  , K_NONE, K_F5  , K_F3  , K_F1  , K_F2  , K_F12 ,
++/* 08 */  K_NONE, K_F10 , K_F8  , K_F6  , K_F4  , K_TAB , K_AGR , K_NONE,
++/* 10 */  K_NONE, K_LALT, K_LSFT, K_NONE, K_LCTL, K_Q   , K_1   , K_NONE,
++/* 18 */  K_NONE, K_NONE, K_Z   , K_S   , K_A   , K_W   , K_2   , K_NONE,
++/* 20 */  K_NONE, K_C   , K_X   , K_D   , K_E   , K_4   , K_3   , K_NONE,
++/* 28 */  K_NONE, K_SPCE, K_V   , K_F   , K_T   , K_R   , K_5   , K_NONE,
++/* 30 */  K_NONE, K_N   , K_B   , K_H   , K_G   , K_Y   , K_6   , K_NONE,
++/* 38 */  K_NONE, K_NONE, K_M   , K_J   , K_U   , K_7   , K_8   , K_NONE,
++/* 40 */  K_NONE, K_COMA, K_K   , K_I   , K_O   , K_0   , K_9   , K_NONE,
++/* 48 */  K_NONE, K_DOT , K_FSLH, K_L   , K_SEMI, K_P   , K_MINS, K_NONE,
++/* 50 */  K_NONE, K_NONE, K_SQOT, K_NONE, K_LSBK, K_EQLS, K_NONE, K_NONE,
++/* 58 */  K_CAPS, K_RSFT, K_ENTR, K_RSBK, K_NONE, K_HASH, K_NONE, K_NONE,
++/* 60 */  K_NONE, K_BSLH, K_NONE, K_NONE, K_NONE, K_NONE, K_BKSP, K_NONE,
++/* 68 */  K_NONE, KP_1  , K_NONE, KP_4  , KP_7  , K_NONE, K_NONE, K_NONE,
++/* 70 */  KP_0  , KP_DOT, KP_2  , KP_5  , KP_6  , KP_8  , K_ESC , K_NUML,
++/* 78 */  K_F11 , KP_PLS, KP_3  , KP_MNS, KP_STR, KP_9  , K_SCRL, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_F7  , K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++	  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE
++};
++
++#ifdef CONFIG_ARCH_WEBPAL_IR_KEYB
++static unsigned char wpal_keycode_translate[128] =
++{
++/* 00 */  K_NONE, K_NONE, K_NONE, K_NONE, K_AGR , K_NONE, K_NONE, K_NONE,
++/* 08 */  K_NONE, K_CAPS, K_X   , K_F5  , K_F1  , K_2   , K_S   , K_W   ,
++/* 10 */  K_NONE, K_F3  , K_C   , K_F4  , K_F2  , K_3   , K_D   , K_E   ,
++/* 18 */  K_LALT, K_TAB , K_Z   , K_NONE, K_NONE, K_1   , K_A   , K_Q   ,
++/* 20 */  K_B   , K_T   , K_V   , K_G   , K_5   , K_4   , K_F   , K_R   ,
++/* 28 */  K_RALT, K_ESC , K_NONE, K_LCTL, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 30 */  K_NONE, K_LSFT, K_RSFT, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 38 */  K_SPCE, K_BKSP, K_ENTR, K_F6  , K_F9  , K_F10 , K_BSLH, K_NONE,
++/* 40 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 48 */  K_LEFT, K_NONE, K_NONE, K_UP  , K_INS , K_NONE, K_DEL , K_NONE,
++/* 50 */  K_DOWN, K_NONE, K_NONE, K_NONE, K_NONE, K_F11 , K_PGUP, K_NONE,
++/* 58 */  K_RGHT, K_NONE, K_NONE, K_PGDN, K_NONE, K_F12 , K_NONE, K_NONE,
++/* 60 */  K_NONE, K_F7  , K_DOT , K_NONE, K_F8  , K_9   , K_L   , K_O   ,
++/* 68 */  K_FSLH, K_LSBK, K_NONE, K_SQOT, K_MINS, K_0   , K_SEMI, K_P   ,
++/* 70 */  K_NONE, K_RSBK, K_COMA, K_EQLS, K_EQLS, K_8   , K_K   , K_I   ,
++/* 78 */  K_N   , K_Y   , K_M   , K_H   , K_6   , K_7   , K_J   , K_U   
++};
++
++static unsigned char remcode_translate[128] =
++{
++/* 00 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 08 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 10 */  K_NONE, K_NONE, K_NONE, K_NONE, K_3   , K_1   , K_2   , K_6   ,
++/* 18 */  K_4   , K_5   , K_9   , K_8   , K_7   , K_0   , K_HASH, K_NONE,
++/* 20 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 28 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 30 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 38 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 40 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 48 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 50 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 58 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 60 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 68 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 70 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE,
++/* 78 */  K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE, K_NONE
++};
++
++#endif
++
++#ifdef CONFIG_MAGIC_SYSRQ
++static unsigned char ps2kbd_sysrq_xlate[] = 
++{
++    27,    0,    0,    0,    0,    0,    0,    0,
++     0,    0,    0,    0,    0,    0,    0,    0,
++   '`',  '1',  '2',  '3',  '4',  '5',  '6',  '7',
++   '8',  '9',  '0',  '-',  '=',  '£',  127,    0,
++     0,    0,    0,  '/',  '*',  '#',    9,  'q',
++   'w',  'e',  'r',  't',  'y',  'u',  'i',  'o',
++   'p',  '[',  ']', '\\',  22,    23,   25,  '7',
++   '8',  '9',  '-',    0,  'a',  's',  'd',  'f',
++   'g',  'h',  'j',  'k',  'l',  ';', '\'',   13,
++   '4',  '5',  '6',  '+',    0,    0,  'z',  'x',
++   'c',  'v',  'b',  'n',  'm',  ',',  '.',  '/',
++     0,    0,  '1',  '2',  '3',    0,    0,  ' ',
++     0,    0,    0,    0,    0,  '0',  '.',   10,
++     0,    0,    0,    0,    0,    0,    0,    0,
++     0,    0,    0,    0,    0,    0,    0,    0,
++     0,    0,    0,    0,    0,    0,    0,    0,
++};
++#endif
++
++static inline void ps2kbd_key(unsigned int keycode, unsigned int up_flag)
++{
++	handle_scancode(keycode, !up_flag);
++}
++
++#ifdef CONFIG_ARCH_WEBPAL_IR_KEYB
++
++static inline void webpal_irkbd_sendbyte(unsigned char val)
++{
++}
++
++static int keysym = K_NONE;
++static int lastKey = 0x80;
++
++/* The following variables are used by the key-rollover filter */
++
++static long long current_jiffies = 0;	/* Timestamp of current key (n) */
++static long long jiffies_minus_1 = 0;	/* Timestamp of key n-1 */
++static long long jiffies_minus_2 = 0;	/* Timestamp of key n-2 */
++static int keysym_minus_1 = K_NONE;	/* Key n-1 value */
++static int keysym_minus_2 = K_NONE;	/* Key n-2 value */
++static int key_filter = 0;		/* Specifies whether keyboard filtering is in effect */
++
++static inline void webpal_irkbd_reset(void)
++{
++	status = 0;
++	keysym = K_NONE;
++	kbd_reset_kdown();
++}
++
++static void handle_wpal_rawcode(int keyval)
++{
++	if (ncodes == 0) {
++		switch (keyval) {
++
++		case KEY_KEY:
++		case REM_DOWN:
++		case KEY_UP:
++		case CUR_DIR:
++			ncodes = 2;
++			bi = 0;
++			break;
++
++		default:
++			printk("Keyboard error %x\n", keyval);
++			return;
++		}
++	} 
++
++	buffer[bi++] = keyval;
++	ncodes -= 1;
++	if (ncodes)
++		return;
++		
++	switch (buffer[0]) {
++
++	case KEY_KEY:
++		if (buffer[1] == 0x80) {
++			lastKey = 0x80;
++			kbd_reset_kdown();
++			return;
++		}
++
++		if (buffer[1] == lastKey)
++			return;
++	
++		if (buffer[1] & 0x80) {
++			status |= CODE_BREAK;
++			lastKey = 0x80;
++		} else {
++			lastKey = buffer[1];
++		}
++
++		keysym = wpal_keycode_translate[buffer[1] & 0x7f];
++
++		break;
++
++	case REM_DOWN:
++		keysym = remcode_translate[buffer[1] & 0x7f];
++		status = 0;
++		break;
++		
++	case KEY_UP:
++		if (buffer[1] == 0x0d)
++			kbd_reset_kdown();
++		status = 0;
++		return; 
++		
++	case CUR_DIR:
++		printk("Cursor direction %x\n", buffer[1]);
++		status = 0;
++		return;
++	}	
++
++	if (keysym != K_NONE)
++		ps2kbd_key(keysym, status & CODE_BREAK);
++	status = 0;
++}
++
++static void webpal_irkbd_rx(int irq, void *dev_id, struct pt_regs *regs)
++{
++	unsigned char ircode;
++
++	kbd_pt_regs = regs;
++
++	while (IR_READ(UART_LSR) & UART_LSR_DR)
++	{
++		handle_wpal_rawcode((ircode = IR_READ(UART_RX)) & 0xff);
++	//	printk(KERN_CRIT "ircode: %02x\n", ircode );
++	}
++
++	/* Take a snapshot of the current jiffies counter */
++
++	current_jiffies = jiffies;
++
++	/* Determine whether we should enter key filtering mode.
++	 *
++	 * The Webpal IR keyboard hardware appears to have a bug
++	 * in the way it handles key-rollover.  When a key ("key 2")
++	 * is pressed before the previous key ("key 1") is released,
++	 * key 2 incorrectly starts auto-repeating as soon as key 1
++	 * is released.  When this happens, the behavior seen on the
++	 * IR serial port is as follows:  the key code for key 2
++	 * seems to come in less than one auto-repeat interval 
++	 * after the key code for key 1.  Immediately thereafter,
++	 * additional keycodes for key 2 are received at the auto-
++	 * repeat interval (~10 jiffies).  The following code watches
++	 * for this behavior and enters a "key filtering" state
++	 * when it is detected.  While the driver is in this state
++	 * all key codes received are discarded.  This state is left
++	 * when two consecutive key codes are received at an interval
++	 * that is greater than the auto repeat interval.
++	 *
++	 * This algorithm is based on experimenting with the IR
++	 * keyboard and watching the codes (and timing thereof)
++	 * received on the IR serial port.  It probably has some
++	 * holes and could probably be improved.
++	 */
++
++	if (((current_jiffies - jiffies_minus_1) < (int)(1.5 * AUTO_REP_INT))
++	   && (keysym == keysym_minus_1)
++	   && ((jiffies_minus_1 - jiffies_minus_2) < (int)(1.5 * AUTO_REP_INT))
++	   && (keysym_minus_1 != keysym_minus_2))
++		key_filter = 1;
++
++	/* Check whether key filtering mode should be left */
++
++	if ((current_jiffies - jiffies_minus_1) > (int)(1.5 * AUTO_REP_INT))
++		key_filter = 0;
++
++	/* Allow key through only if filtering is not in effect */
++
++	if (key_filter == 0)
++	  tasklet_schedule(&keyboard_tasklet);
++
++	/* Update timestamps and key values */
++
++	jiffies_minus_2 = jiffies_minus_1;
++	jiffies_minus_1 = current_jiffies;
++
++	keysym_minus_2 = keysym_minus_1;
++	keysym_minus_1 = keysym;
++	
++	IR_WRITE(UART_IER, UART_IER_RDI);
++}
++
++#endif
++
++static inline void ps2kbd_sendbyte(unsigned char val)
++{
++	int tries = 3, timeout = 1000;
++
++        if( ps2_keyboard_present )
++        {
++	tx_state = TX_SEND;
++
++	do {
++		switch (tx_state) {
++		case TX_SEND:
++			tx_state = TX_SENT;
++			timeout = 1000;
++			tries --;
++
++			while(!(iomd_readb(IOMD_KCTRL) & (1 << 7)));
++			iomd_writeb(val, IOMD_KARTTX);
++			break;
++
++		case TX_SENT:
++			udelay(1000);
++			if (--timeout == 0) {
++				printk(KERN_ERR "Keyboard timeout\n");
++				tx_state = TX_DONE;
++        				ps2_keyboard_present = 0;
++			}
++			break;
++
++		case TX_DONE:
++			break;
++		}
++	} while (tries > 0 && tx_state != TX_DONE);
++        }
++        else
++        	tx_state = TX_DONE;
++}
++
++static inline void ps2kbd_reset(void)
++{
++	status = 0;
++	kbd_reset_kdown();
++}
++
++static void handle_rawcode(int keyval)
++{
++	int keysym;
++
++	if (keyval > 0x83) {
++		switch (keyval) {
++		case KBD_ESCAPEE0:
++			ncodes = 2;
++			bi = 0;
++			break;
++
++		case KBD_ESCAPEE1:
++			ncodes = 3;
++			bi = 0;
++			break;
++
++		case KBD_ACK:
++			tx_state = TX_DONE;
++			return;
++
++		case KBD_RESEND:
++			tx_state = TX_SEND;
++			return;
++
++		case KBD_BREAK:
++			status |= CODE_BREAK;
++			return;
++
++		default:
++			return;
++		}
++	}
++
++	if (ncodes) {
++		buffer[bi++] = keyval;
++		ncodes -= 1;
++		if (ncodes)
++			return;
++		keysym = K_NONE;
++		switch (buffer[0] << 8 | buffer[1]) {
++		case ESCE0(0x11): keysym = K_RALT; break;
++		case ESCE0(0x14): keysym = K_RCTL; break;
++		/*
++		 * take care of MS extra keys (actually
++		 * 0x7d - 0x7f, but last one is already K_NONE
++		 */
++		case ESCE0(0x1f): keysym = 124;    break;
++		case ESCE0(0x27): keysym = 125;    break;
++		case ESCE0(0x2f): keysym = 126;    break;
++		case ESCE0(0x4a): keysym = KP_SLH; break;
++		case ESCE0(0x5a): keysym = KP_ENT; break;
++		case ESCE0(0x69): keysym = K_END;  break;
++		case ESCE0(0x6b): keysym = K_LEFT; break;
++		case ESCE0(0x6c): keysym = K_HOME; break;
++		case ESCE0(0x70): keysym = K_INS;  break;
++		case ESCE0(0x71): keysym = K_DEL;  break;
++		case ESCE0(0x72): keysym = K_DOWN; break;
++		case ESCE0(0x74): keysym = K_RGHT; break;
++		case ESCE0(0x75): keysym = K_UP;   break;
++		case ESCE0(0x7a): keysym = K_PGDN; break;
++		case ESCE0(0x7c): keysym = K_PRNT; break;
++		case ESCE0(0x7d): keysym = K_PGUP; break;
++		case ESCE1(0x14):
++			if (buffer[2] == 0x77)
++				keysym = K_BRK;
++			break;
++		case ESCE0(0x12):		/* ignore escaped shift key */
++			status = 0;
++			return;
++		}
++	} else {
++		bi = 0;
++		keysym = keycode_translate[keyval];
++	}
++
++	if (keysym != K_NONE)
++		ps2kbd_key(keysym, status & CODE_BREAK);
++	status = 0;
++}
++
++static void ps2kbd_leds(unsigned char leds)
++{
++	ps2kbd_sendbyte(KBD_SETLEDS);
++	ps2kbd_sendbyte(leds);
++	ps2kbd_sendbyte(KBD_SCANENABLE);
++}
++
++static void ps2kbd_rx(int irq, void *dev_id, struct pt_regs *regs)
++{
++	kbd_pt_regs = regs;
++
++	while (iomd_readb(IOMD_KCTRL) & (1 << 5))
++	{
++		handle_rawcode(iomd_readb(IOMD_KARTRX));
++		ps2_keyboard_present = 1;
++	}
++	tasklet_schedule(&keyboard_tasklet);
++}
++
++static void ps2kbd_tx(int irq, void *dev_id, struct pt_regs *regs)
++{
++}
++
++static int ps2kbd_translate(unsigned char scancode, unsigned char *keycode, char rawmode)
++{
++	*keycode = scancode;
++	return 1;
++}
++
++static char ps2kbd_unexpected_up(unsigned char scancode)
++{
++	return 0200;
++}
++
++int __init ps2kbd_init_hw(void)
++{
++	/* Reset the keyboard state machine. */
++	iomd_writeb(0, IOMD_KCTRL);
++	iomd_writeb(8, IOMD_KCTRL);
++	iomd_readb(IOMD_KARTRX);
++
++#ifdef CONFIG_ARCH_WEBPAL_IR_KEYB
++        /* Initialize the IR uart */
++	
++	IR_WRITE(UART_IER, 0);
++	IR_WRITE(UART_LCR, UART_LCR_WLEN8);
++	IR_WRITE(UART_LCR, UART_LCR_WLEN8 | UART_LCR_DLAB);
++	IR_WRITE(UART_DLL, 12);
++	IR_WRITE(UART_DLM, 0);
++	IR_WRITE(UART_LCR, UART_LCR_WLEN8);
++	IR_WRITE(UART_FCR, UART_FCR_ENABLE_FIFO |
++		UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT);
++	IR_WRITE(UART_MCR, UART_MCR_OUT2 /* | UART_MCR_RTS | UART_MCR_DTR */);
++	IR_WRITE(UART_IER, UART_IER_RDI);
++
++	IR_WRITE(UART_TX, 0x11);
++	IR_WRITE(UART_TX, 0x0d);
++	if (request_irq (IRQ_INT6, webpal_irkbd_rx, 0, "IR keyboard", NULL) != 0)
++		panic("Could not allocate Webpal keyboard receive IRQ!");
++#endif
++
++	if (request_irq (IRQ_KEYBOARDRX, ps2kbd_rx, 0, "keyboard", NULL) != 0)
++		panic("Could not allocate keyboard receive IRQ!");
++	if (request_irq (IRQ_KEYBOARDTX, ps2kbd_tx, 0, "keyboard", NULL) != 0)
++		panic("Could not allocate keyboard transmit IRQ!");
++
++	k_translate	= ps2kbd_translate;
++	k_unexpected_up	= ps2kbd_unexpected_up;
++	k_leds		= ps2kbd_leds;
++#ifdef CONFIG_MAGIC_SYSRQ
++	k_sysrq_xlate	= ps2kbd_sysrq_xlate;
++	k_sysrq_key	= 13;
++#endif
++	ps2_keyboard_present = 1;
++
++	return 0;
++}
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/char/Config.in linux-2.4.18-rmk4/drivers/char/Config.in
+--- linux-orig-2.4.18-rmk4/drivers/char/Config.in	2005-03-04 14:03:33.500861032 -0800
++++ linux-2.4.18-rmk4/drivers/char/Config.in	2004-01-27 00:48:21.000000000 -0800
+@@ -187,6 +187,9 @@
+ if [ "$CONFIG_IA64" = "y" ]; then
+    bool 'EFI Real Time Clock Services' CONFIG_EFI_RTC
+ fi
++if [ "$CONFIG_ARCH_WEBPAL" = "y" ]; then
++   tristate 'Webpal Real Time Clock Support' CONFIG_WEBPAL_RTC
++fi
+ if [ "$CONFIG_OBSOLETE" = "y" -a "$CONFIG_ALPHA_BOOK1" = "y" ]; then
+    bool 'Tadpole ANA H8 Support'  CONFIG_H8
+ fi
+@@ -241,4 +244,6 @@
+    tristate 'ACP Modem (Mwave) support' CONFIG_MWAVE
+ fi
+ 
++tristate 'SLink support' CONFIG_SLINK
++
+ endmenu
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/char/Makefile linux-2.4.18-rmk4/drivers/char/Makefile
+--- linux-orig-2.4.18-rmk4/drivers/char/Makefile	2005-03-04 14:03:33.521857840 -0800
++++ linux-2.4.18-rmk4/drivers/char/Makefile	2004-01-27 00:40:56.000000000 -0800
+@@ -184,7 +184,7 @@
+ obj-$(CONFIG_MVME162_SCC) += generic_serial.o vme_scc.o
+ obj-$(CONFIG_BVME6000_SCC) += generic_serial.o vme_scc.o
+ obj-$(CONFIG_SERIAL_TX3912) += generic_serial.o serial_tx3912.o
+-
++obj-$(CONFIG_SLINK) += slink.o
+ subdir-$(CONFIG_RIO) += rio
+ subdir-$(CONFIG_INPUT) += joystick
+ 
+@@ -208,6 +208,7 @@
+ obj-$(CONFIG_ADBMOUSE) += adbmouse.o
+ obj-$(CONFIG_PC110_PAD) += pc110pad.o
+ obj-$(CONFIG_RTC) += rtc.o
++obj-$(CONFIG_WEBPAL_RTC) += webpal-rtc.o
+ obj-$(CONFIG_EFI_RTC) += efirtc.o
+ obj-$(CONFIG_SA1100_RTC) += sa1100-rtc.o
+ ifeq ($(CONFIG_PPC),)
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/char/serial.c linux-2.4.18-rmk4/drivers/char/serial.c
+--- linux-orig-2.4.18-rmk4/drivers/char/serial.c	2002-02-25 11:37:57.000000000 -0800
++++ linux-2.4.18-rmk4/drivers/char/serial.c	2003-03-08 10:08:25.000000000 -0800
+@@ -124,9 +124,11 @@
+ 
+ #if defined(CONFIG_ISAPNP)|| (defined(CONFIG_ISAPNP_MODULE) && defined(MODULE))
+ #ifndef ENABLE_SERIAL_PNP
++#ifndef CONFIG_ARCH_WEBPAL
+ #define ENABLE_SERIAL_PNP
+ #endif
+ #endif
++#endif
+ 
+ /* Set of debugging defines */
+ 
+@@ -3663,11 +3665,17 @@
+ #ifdef __i386__
+ 		outb(0xff, 0x080);
+ #endif
++#ifdef CONFIG_ARCH_WEBPAL
++		outb(0xff, 0x80400080);
++#endif
+ 		scratch2 = serial_inp(info, UART_IER);
+ 		serial_outp(info, UART_IER, 0x0F);
+ #ifdef __i386__
+ 		outb(0, 0x080);
+ #endif
++#ifdef CONFIG_ARCH_WEBPAL
++		outb(0, 0x80400080);
++#endif
+ 		scratch3 = serial_inp(info, UART_IER);
+ 		serial_outp(info, UART_IER, scratch);
+ 		if (scratch2 || scratch3 != 0x0F) {
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/char/slink.c linux-2.4.18-rmk4/drivers/char/slink.c
+--- linux-orig-2.4.18-rmk4/drivers/char/slink.c	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/drivers/char/slink.c	2003-03-08 10:08:25.000000000 -0800
+@@ -0,0 +1,550 @@
++// Sony S-Link protocol device driver, version 2.0
++// Copyright (c) 2000 Brian Behlendorf, bdbehlendorf@students.wisc.edu
++
++//   Although designed to use a parralel port the actual data stream is
++// serial.  Needless to say, this results in some non-conformist code
++// and slightly deviant stream behavior.  It's done primarily because
++// timing is a serious concern, and full packets are a requirement.
++// Plus, I don't want to build a microcontroler.
++
++//   You should open the device as an unbuffered file descriptor;
++// 'open("/dev/slink", O_RDWR | O_NONBLOCK)'.  When reading or writing
++// from the device only use read() and write(), you must work with full
++// packets.  When reading a packet, always ask for the maximum packet
++// size, the actual packet size will be returned.
++
++//   Up to MAX_IN_PACKETS will be cached in the driver, once this is 
++// exceeded the eldest packet is destroyed for new incoming traffic.
++
++//   Up to MAX_OUT_PACKETS can be queued in the driver.  If the buffer 
++// is full all outgoing packets will be rejected.
++
++// Usage: insmod slink [slink_major=x] [slink_irq=y] [slink_base=z]
++//        mknod slink slink_major c 0
++
++// This program is free software; you can redistribute it and/or
++// modify it under the terms of the GNU General Public License
++// as published by the Free Software Foundation; either version 2
++// of the License, or (at your option) any later version.
++
++// This program is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++ 
++// Full text for the GNU General Public License is available at
++// http://www.gnu.org/copyleft/gpl.html or by writing to the Free Software 
++// Foundation, Inc., 59 Temple Place Suite 330, Boston, MA  02111-1307,USA.
++
++
++#include <linux/module.h>
++#include <linux/config.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <linux/poll.h>
++#include <linux/version.h>
++
++#include <linux/parport.h>
++
++#include "slink.h"
++
++int slink_open(struct inode *, struct file *);
++void slink_int(int, void *, struct pt_regs *);
++release_t slink_release(struct inode *, struct file *);
++
++  ssize_t slink_read(struct file *, char *, size_t, loff_t *);
++  ssize_t slink_write(struct file *, const char *, size_t, loff_t *);
++  unsigned int slink_poll(struct file *, poll_table *);
++
++unsigned int slink_major = 0, slink_opened;
++struct pardevice *dev;
++unsigned int in_head, in_tail, out_head, out_tail, ud_head, ud_tail;
++void *ud_packets;
++wait_queue_head_t slink_wait_queue;
++struct slink_packet in_packets[MAX_IN_PACKETS], out_packets[MAX_OUT_PACKETS];
++struct tq_struct slink_write_task, slink_read_task;
++struct timeval *slink_last_used;
++
++struct file_operations slink_fops = {
++  owner:	THIS_MODULE,
++  write:	slink_write,
++  open:		slink_open,
++  release:	slink_release,
++  read:		slink_read,
++  poll:		slink_poll,
++}; 
++
++int number(const char *ptr) {
++  int i, j = 1, ret = 0;
++        
++  for (i = 0; i < 8; i++) {
++    if (*ptr >> i & 0x01)
++      ret += j;
++
++    j *= 2;
++  }
++  
++  return ret;
++} /* number() */
++
++#ifdef DEBUG_CONSOLE
++void debug_decode(const char *tmp, size_t count) {
++  int i, deck = number(tmp), buf = number(tmp + 1), asciiflag = 0;
++  static int linenum = 0;
++
++  linenum++;
++
++  switch (deck) {
++    default:   printk(KERN_ALERT UNK_DECK_FIELD, linenum, deck); break;
++    case 0x90: printk(KERN_ALERT DECK_FIELD, linenum, "Cmd A");  break;
++    case 0x91: printk(KERN_ALERT DECK_FIELD, linenum, "Cmd B");  break;
++    case 0x92: printk(KERN_ALERT DECK_FIELD, linenum, "Cmd C");  break;
++    case 0x93: printk(KERN_ALERT DECK_FIELD, linenum, "Cmd A");  break; 
++    case 0x94: printk(KERN_ALERT DECK_FIELD, linenum, "Cmd B");  break; 
++    case 0x95: printk(KERN_ALERT DECK_FIELD, linenum, "Cmd C");  break; 
++    case 0x98: printk(KERN_ALERT DECK_FIELD, linenum, "Rpy A");  break; 
++    case 0x99: printk(KERN_ALERT DECK_FIELD, linenum, "Rpy B");  break; 
++    case 0x9A: printk(KERN_ALERT DECK_FIELD, linenum, "Rpy C");  break; 
++    case 0x9B: printk(KERN_ALERT DECK_FIELD, linenum, "Rpy A");  break; 
++    case 0x9C: printk(KERN_ALERT DECK_FIELD, linenum, "Rpy B");  break; 
++    case 0x9D: printk(KERN_ALERT DECK_FIELD, linenum, "Rpy C");  break; 
++  }
++
++  if (deck<=0x95 && deck>=0x90) {
++    switch (buf) {
++      default:   printk(COMMAND_FIELD, "Unkn/Invalid");      break;
++      case 0x00: printk(COMMAND_FIELD, "Play");              break;
++      case 0x01: printk(COMMAND_FIELD, "Stop");              break;
++      case 0x02:
++      case 0x03: printk(COMMAND_FIELD, "Pause");             break; 
++      case 0x08: printk(COMMAND_FIELD, "Next Track");        break; 
++      case 0x09: printk(COMMAND_FIELD, "Previous Track");    break;
++      case 0x0E: printk(COMMAND_FIELD, "Qry Strd Fields");   break;
++      case 0x0F: printk(COMMAND_FIELD, "Qry Deck Status");   break;
++      case 0x10: printk(COMMAND_FIELD, "Fast Forward");      break;
++      case 0x11: printk(COMMAND_FIELD, "Rewind");            break;
++      case 0x12: printk(COMMAND_FIELD, "F-Fast Forward");    break;
++      case 0x13: printk(COMMAND_FIELD, "Fast Rewind");       break;
++      case 0x20: printk(COMMAND_FIELD, "Remote Mode On");    break;
++      case 0x21: printk(COMMAND_FIELD, "Remote Mode Off");   break;
++      case 0x22: printk(COMMAND_FIELD, "Player Capacity");   break;
++      case 0x25: printk(COMMAND_FIELD, "Verbose Mode");      break;
++      case 0x26: printk(COMMAND_FIELD, "Brief Mode");        break;
++      case 0x2E: printk(COMMAND_FIELD, "Power On");          break;
++      case 0x2F: printk(COMMAND_FIELD, "Power Off");         break;
++      case 0x40: printk(COMMAND_FIELD, "Query Disc Memo");   break;
++      case 0x41: printk(COMMAND_FIELD, "Qry Avail. Trks");   break;
++      case 0x42: printk(COMMAND_FIELD, "Qry Group Memo");    break;
++      case 0x43: printk(COMMAND_FIELD, "Qry Group Discs");   break;
++      case 0x44: printk(COMMAND_FIELD, "Query Disc");        break;
++      case 0x45: printk(COMMAND_FIELD, "Qry Disc/Trk");      break;
++      case 0x48: printk(COMMAND_FIELD, "Query Memo");        break;
++      case 0x4A: printk(COMMAND_FIELD, "Query BCD->Hex");    break;
++      case 0x50: printk(COMMAND_FIELD, "Play Disc/Trk");     break;
++      case 0x51: printk(COMMAND_FIELD, "Pause Disc/Trk");    break;
++      case 0x5E: printk(COMMAND_FIELD, "Fade Out");          break;
++      case 0x5F: printk(COMMAND_FIELD, "Fade In");           break;
++      case 0x6A: printk(COMMAND_FIELD, "Qry Deck Model");    break;
++      case 0x72: printk(COMMAND_FIELD, "Qry Deck Content");  break;
++      case 0x80: printk(COMMAND_FIELD, "Set Disc Memo"); asciiflag = 1;
++                                                             break;
++      case 0x81: printk(COMMAND_FIELD, "Copy Disc Memo");    break;
++      case 0x88: printk(COMMAND_FIELD, "Set Disc Memo?");    break;
++      case 0x90: printk(COMMAND_FIELD, "Qry Disc Memo?");    break;
++      case 0x91: printk(COMMAND_FIELD, "Qry Disc Memo?");    break;
++      case 0x92: printk(COMMAND_FIELD, "Qry Disc Memo?");    break;
++      case 0x1F: 
++      case 0x23:
++      case 0x24:
++      case 0x27:
++      case 0x29:
++      case 0x30:
++      case 0x31:
++      case 0x46:
++      case 0x47:
++      case 0x63:
++      case 0x64:
++      case 0x74: printk(COMMAND_FIELD, "Unkn/Valid");        break;
++    }
++  } else {
++    if (deck>=0x98 && deck<=0x9D) {
++      switch (buf) {
++        default:   printk(COMMAND_FIELD, "Unkn/Invalid");      break;
++        case 0x00: printk(COMMAND_FIELD, "Playing");           break;
++        case 0x01: printk(COMMAND_FIELD, "Stopped");           break;
++        case 0x02: printk(COMMAND_FIELD, "Paused");            break;
++        case 0x05: printk(COMMAND_FIELD, "No Disc");           break;
++        case 0x06: printk(COMMAND_FIELD, "Changing Disc");     break;
++        case 0x08: printk(COMMAND_FIELD, "Ready");             break;
++        case 0x0C: printk(COMMAND_FIELD, "29 Sec Remain");     break;
++        case 0x0E: printk(COMMAND_FIELD, "Duplicate Cmd");     break;
++        case 0x0F: printk(COMMAND_FIELD, "Invalid Cmd");       break;
++        case 0x11: printk(COMMAND_FIELD, "No Del. File?");     break;
++        case 0x13: printk(COMMAND_FIELD, "No Group?");         break; 
++        case 0x14: printk(COMMAND_FIELD, "D Not Loaded");      break;
++        case 0x15: printk(COMMAND_FIELD, "D/T Not Loaded");    break;
++        case 0x18: printk(COMMAND_FIELD, "Door Open");         break;  
++        case 0x1D: printk(COMMAND_FIELD, "Terminator");        break;
++        case 0x1F: printk(COMMAND_FIELD, "Disc Memo Set");     break;
++        case 0x2E: printk(COMMAND_FIELD, "Power On");          break;
++        case 0x2F: printk(COMMAND_FIELD, "Power Off");         break;
++        case 0x40: printk(COMMAND_FIELD, "Memo");              break;
++        case 0x41: printk(COMMAND_FIELD, "Avail. Tracks");     break;
++        case 0x42: printk(COMMAND_FIELD, "Group");             break;
++        case 0x44:
++        case 0x45: printk(COMMAND_FIELD, "Disc Memo ChkSm");   break;
++        case 0x47: printk(COMMAND_FIELD, "CDText Disc,Fl?");   break;
++        case 0x48: printk(COMMAND_FIELD, "Memory");            break;
++        case 0x50: printk(COMMAND_FIELD, "Playing Disc");      break;
++        case 0x51: printk(COMMAND_FIELD, "Playing Disc at");   break;
++        case 0x52: printk(COMMAND_FIELD, "Displaying Disc");   break;
++        case 0x53: printk(COMMAND_FIELD, "Bad/Missing Dsc");   break;
++        case 0x54: printk(COMMAND_FIELD, "UnLoading Disc");    break;
++        case 0x58: printk(COMMAND_FIELD, "Loading Disc");      break;
++        case 0x5D: printk(COMMAND_FIELD, "BCD->HEX");          break;
++        case 0x60: printk(COMMAND_FIELD, "Qry'd Disc");        break;
++        case 0x61: printk(COMMAND_FIELD, "Deck Size");         break;
++        case 0x62: printk(COMMAND_FIELD, "Qry'd Disc/Trk");    break;
++        case 0x6A: printk(COMMAND_FIELD, "Deck Model Id");     break;
++        case 0x70: printk(COMMAND_FIELD, "Deck Mode");         break;
++        case 0x71: printk(COMMAND_FIELD, "Deck ???");          break;
++        case 0x72: printk(COMMAND_FIELD, "Deck Contents 1");   break;
++        case 0x73: printk(COMMAND_FIELD, "Deck Contents 2");   break;
++        case 0x74: printk(COMMAND_FIELD, "Deck Contents 3");   break;
++        case 0x83: printk(COMMAND_FIELD, "Door Closed");       break;
++      }
++    } else { printk("0x%02X", buf); }
++  }
++
++  // check for the text data fields
++  if (asciiflag) {
++    printk("%02X ", number(tmp));
++    printk("%02X-", number(tmp+1));
++    printk("%02X ", number(tmp+2));
++    for (i = 3; i < count; i++)
++      printk(" %c ", number(tmp + i));
++    printk("\n                               ");
++    }
++    
++  for (i = 0; i < count; i++)
++    printk("%02X%s", number(tmp + i), (i == 1) ? "-" : " ");
++
++  printk("\n");
++} /* debug_decode() */
++#endif /* DEBUG_CONSOLE */
++ 
++unsigned long slink_port_clear(void) {
++  struct timeval current_time;
++
++  do_gettimeofday(&current_time);
++
++  return ((current_time.tv_usec + current_time.tv_sec * 1000000) - 
++    (slink_last_used -> tv_usec + slink_last_used -> tv_sec * 1000000));
++} /* slink_port_clear() */
++
++void slink_write_pending(void *null) {
++  int deck, cmd, i, j, size;
++  char *packet;
++
++  if (out_head == out_tail)
++    return;
++
++  if (slink_port_clear() < PORT_CLEAR) {
++    queue_task(&slink_write_task, &tq_timer);
++    return;
++  }
++
++  size = out_packets[out_head].size;
++  packet = (char *)out_packets[out_head].data;
++  deck = number(packet);
++  cmd = number(packet + 1);
++  cli();
++
++  // Send the variable bit length IR commands
++  if (cmd == 0xE0) {
++    INIT; ONE; ONE; ONE; ZERO;
++
++    for (j = 6; j >= 0; j--)
++      if (test_bit(j, packet + 2)) {
++        ONE;
++      } else {
++        ZERO;
++      }
++ 
++    switch (deck) {
++      case 0x90:  case 0x93:
++        ONE; ZERO; ZERO; ZERO; ONE;			break;
++      case 0x91:  case 0x94:
++        ONE; ZERO; ZERO; ONE; ONE; ONE; ZERO; ZERO;	break; 
++      case 0x92:  case 0x95:
++        ONE; ZERO; ZERO; ZERO; ONE; ZERO; ONE; ZERO;
++    }
++  // Send the provided full byte S-Link packets
++  } else {	
++    INIT;
++
++    for (i = 0; i < size; i++)
++      for (j = 7; j >= 0; j--)
++        if (test_bit(j, packet + i)) {
++          ONE;
++        } else {
++          ZERO;
++        }
++  }  
++
++  sti();
++  do_gettimeofday(slink_last_used);
++
++  if ((out_head = NEXT_OUT_PACKET(out_head)) != out_tail)
++    queue_task(&slink_write_task, &tq_timer);
++
++  return;
++} /* slink_write_pending() */
++
++ssize_t slink_read(struct file *filp, char *buf, size_t count,
++    loff_t *ppos) {
++  int i, temp_head = in_head, size = in_packets[in_head].size;
++  static int flag = 0;
++
++  if ((in_head == in_tail) || (flag))
++    return (flag = 0);
++
++  for (i = 1; i < MAX_IN_PACKETS; i++)
++    if ((temp_head = NEXT_IN_PACKET(temp_head)) == in_tail)
++      break;
++
++  if (i > 1)
++    flag = 1;
++
++  if (copy_to_user(buf, in_packets[in_head].data, size))
++    return -EFAULT;
++
++  in_head = NEXT_IN_PACKET(in_head);
++
++#ifdef DEBUG_CONSOLE
++  debug_decode(buf, size);
++#endif /* DEBUG_CONSOLE */
++
++  return size;
++} /* slink_read() */
++
++ssize_t slink_write(struct file *filp, const char *buf,
++    size_t count, loff_t *ppos) {
++
++  if (count > MAX_PACKET_SIZE)
++    return EOVERFLOW;
++
++  if (copy_from_user(out_packets[out_tail].data, buf, count))
++    return -EFAULT;
++
++  out_packets[out_tail].size = count;
++  out_tail = NEXT_OUT_PACKET(out_tail);
++
++  queue_task(&slink_write_task, &tq_timer);
++
++#ifdef DEBUG_CONSOLE
++  debug_decode(buf, count);
++#endif /* DEBUG_CONSOLE */
++
++  return count;
++} /* slink_write() */
++
++unsigned int slink_poll(struct file *filp, poll_table *table) {
++  unsigned mask = 0;
++
++  if (in_head != in_tail)
++    mask |= POLLIN | POLLRDNORM;
++
++  if (NEXT_OUT_PACKET(out_tail) != out_head)
++    mask |= POLLOUT | POLLWRNORM;
++
++  if (!mask)
++    poll_wait(filp, &slink_wait_queue, table);
++
++  return mask;
++} /* slink_poll() */
++
++void slink_read_pending(void *null) {
++  static int last_tail = 0, passes = 0;
++  struct timeval *curr, *next;
++  int time, byte = 0, bit = 7;
++  char packet[MAX_PACKET_SIZE];
++
++  if (last_tail == ud_tail) {
++    passes++;
++  } else {
++    last_tail = ud_tail;
++    passes = 0;
++  }
++
++  if (passes >= 2) {
++
++    while (slink_opened) {
++      curr = ((struct timeval *)(ud_packets + ud_head));
++      next = ((struct timeval *)(ud_packets + NEXT_UD_PACKET(ud_head)));
++      time = (((next -> tv_usec) + (next -> tv_sec * 1000000)) -
++              ((curr -> tv_usec) + (curr -> tv_sec * 1000000)));
++
++      if ((ud_head = NEXT_UD_PACKET(ud_head)) == ud_tail)
++        break;
++
++      if ((time > (ZERO_LENGTH - PORT_TOLERANCE)) &&
++          (time < (ZERO_LENGTH + PORT_TOLERANCE))) {
++        clear_bit(bit, packet + byte);
++       } else
++        if ((time > (ONE_LENGTH - PORT_TOLERANCE)) &&
++            (time < (ONE_LENGTH + PORT_TOLERANCE))) {
++          set_bit(bit, packet + byte);
++       } else {
++          break;
++       }
++
++      if ((bit--) <= 0) {
++        byte++;
++        bit = 7;
++      }
++    }
++
++    if (byte >= 2) {
++      memcpy(in_packets[in_tail].data, packet, byte);
++      in_packets[in_tail].size = byte;
++
++      if ((in_tail = NEXT_IN_PACKET(in_tail)) == in_head)
++        in_head = NEXT_IN_PACKET(in_head);
++    }
++  } 
++
++  if ((slink_opened) && (ud_head != ud_tail))
++    queue_task(&slink_read_task, &tq_timer);
++
++  return;
++} /* slink_read_pending() */
++
++int slink_open(struct inode *inode, struct file *filp) 
++{
++  if ((slink_opened) || MINOR(inode -> i_rdev))
++    return 1;
++
++  if (parport_claim(dev) != 0) {
++    printk(KERN_ERR "S-Link: Unable to claim parallel port.\n");
++    return 1;
++  }
++  init_waitqueue_head(&slink_wait_queue);
++
++  MOD_INC_USE_COUNT;
++
++  parport_write_data(dev->port, 0x00);
++
++  slink_opened = 1;
++  in_head = in_tail = out_head = out_tail = ud_head = ud_tail = 0;
++  filp -> f_op = &slink_fops;
++  do_gettimeofday(slink_last_used);
++
++  parport_enable_irq(dev->port); 
++
++  return 0;
++} /* slink_open() */
++
++release_t slink_release(struct inode *inode, struct file *filp) {
++  slink_opened = 0;
++  parport_disable_irq(dev->port);
++  parport_release(dev);
++  MOD_DEC_USE_COUNT;
++
++  return 0;
++} /* slink_release() */
++
++void slink_int(int irq, void *dev_id, struct pt_regs *regs) {
++
++  do_gettimeofday(ud_packets + ud_tail);
++  ud_tail = NEXT_UD_PACKET(ud_tail);
++  queue_task(&slink_read_task, &tq_timer);
++
++  return;
++} /* slink_int() */
++
++
++/* This just grabs the first parallel port */
++
++static void slink_attach (struct parport *port) 
++{
++	dev = parport_register_device(port, "slink",
++		NULL, NULL, slink_int, PARPORT_DEV_EXCL, NULL);
++}
++
++static void slink_detach (struct parport *port)
++{
++	parport_unregister_device(dev);
++}
++
++static struct parport_driver slink_driver = {
++	"slink",
++	slink_attach,
++	slink_detach,
++	NULL
++};
++
++int __init slink_init(void) {
++  int ret;
++
++  // Auto-detect major number if not specified
++  if ((ret = register_chrdev(slink_major, "slink", &slink_fops)) < 0) {
++    if (slink_major)
++      printk(KERN_ERR "S-Link: Major number %i, unavailable.\n",
++        slink_major);
++    else
++      printk(KERN_ERR "S-Link: No available major numbers.\n");
++
++    goto slink_major_fail;
++  } else {
++    if (ret > 0)
++      slink_major = ret;
++  }
++
++  if (parport_register_driver(&slink_driver)) {
++      printk(KERN_ERR "S-Link: Unable to register with parport.\n");
++      goto slink_reg_fail;
++  }
++
++  if (!(ud_packets = (void *)__get_free_pages(GFP_KERNEL, 0)))
++    goto slink_memory_fail;
++
++  if (!(slink_last_used = kmalloc(sizeof(struct timeval), GFP_KERNEL)))
++    goto slink_memory_fail;
++
++  printk(KERN_NOTICE "S-Link: Installed, major number %d\n", slink_major);
++
++  slink_opened = 0;
++  do_gettimeofday(slink_last_used);
++
++  slink_write_task.routine = slink_write_pending;
++  slink_write_task.data = NULL;
++
++  slink_read_task.routine = slink_read_pending;
++  slink_read_task.data = NULL;
++
++  return 0;
++
++  slink_memory_fail:
++    printk(KERN_ERR "S-Link: Memory allocation failed.\n");
++  slink_reg_fail:
++    unregister_chrdev(slink_major, "slink");
++  slink_major_fail:
++
++  return 1;
++} /* init_module() */
++
++void slink_cleanup(void) {
++
++  free_pages((unsigned long)ud_packets, 0);
++  kfree(slink_last_used);
++  unregister_chrdev(slink_major, "slink");
++} /* cleanup_module() */
++
++module_init(slink_init);
++module_exit(slink_cleanup);
++
++MODULE_AUTHOR("Bill Danielson");
++MODULE_DESCRIPTION("SLink driver");
++MODULE_LICENSE("GPL");
++EXPORT_NO_SYMBOLS;
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/char/slink.h linux-2.4.18-rmk4/drivers/char/slink.h
+--- linux-orig-2.4.18-rmk4/drivers/char/slink.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/drivers/char/slink.h	2003-03-08 10:08:25.000000000 -0800
+@@ -0,0 +1,46 @@
++#ifndef _SLINK_H
++#define _SLINK_H
++
++// Uncomment the following line to activate the debug log to console
++#define DEBUG_CONSOLE
++
++#define SLINK_BASE_NUM   3
++#define SLINK_BASE_SIZE  4
++
++#define MAX_IN_PACKETS   32
++#define MAX_OUT_PACKETS  32
++
++#define NEXT_IN_PACKET(XXX)   ((XXX < (MAX_IN_PACKETS - 1)) ? (XXX + 1) : 0)
++#define NEXT_OUT_PACKET(XXX)  ((XXX < (MAX_OUT_PACKETS - 1)) ? (XXX + 1) : 0)
++#define NEXT_UD_PACKET(XXX)   ((XXX < ((4 * PAGE_SIZE) - \
++                              sizeof(struct timeval))) ? \
++                              (XXX + sizeof(struct timeval)) : 0)
++#define MAX_PACKET_SIZE  16
++
++#define PORT_CLEAR       5000
++#define PORT_TOLERANCE   200
++
++#define LO          (parport_write_data(dev->port, 0x00))
++#define HI          (parport_write_data(dev->port, 0x01))
++#define SLEEP       (udelay(600))
++
++#define INIT        LO; SLEEP; HI; SLEEP; SLEEP; SLEEP; SLEEP; LO; SLEEP
++#define ONE         HI; SLEEP; SLEEP; LO; SLEEP
++#define ZERO        HI; SLEEP; LO; SLEEP
++
++#define INIT_LENGTH 2400
++#define ONE_LENGTH  1800
++#define ZERO_LENGTH 1200
++
++#define DECK_FIELD     "%6i %-6s"
++#define UNK_DECK_FIELD "%6i %-6i"
++#define COMMAND_FIELD  "%-16s| "
++
++#define release_t   int
++
++struct slink_packet {
++  char data[MAX_PACKET_SIZE];
++  int size;
++}; /* struct slink_packet */
++
++#endif /* _SLINK_H */
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/char/webpal-rtc.c linux-2.4.18-rmk4/drivers/char/webpal-rtc.c
+--- linux-orig-2.4.18-rmk4/drivers/char/webpal-rtc.c	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/drivers/char/webpal-rtc.c	2004-02-01 13:17:13.000000000 -0800
+@@ -0,0 +1,574 @@
++/*
++ *	Real Time Clock interface for Webpal	
++ *
++ *	Copyright (C) 2004 Bill Danielson (modified for DS1302/Webpal)
++ *
++ *      Based on Linux x86 rtc.c Copyright (C) 1996 Paul Gortmaker
++ *
++ *	This driver allows use of the real time clock in the Webpal 
++ *      from user space. It exports the /dev/rtc
++ *	interface supporting various ioctl() and also the
++ *	/proc/driver/rtc pseudo-file for status information.
++ * 
++ * 	This design "borrows" four of the bits of the
++ *	8 bit port that is normally used to control the centering
++ *	of the video out/SVideo outputs from the Crontel 7001 chip.
++ *      Since most people don't use that chip, stealing a couple
++ *      of its IO lines provides a cheap way to add a RTC to the
++ *      Webpal.
++ *
++ *	Thus, to use this design, you must have powered down the 7001
++ *	and be using only VGA and serial outputs.   It probably
++ *      doesn't matter if the 7001 is powered down, although since
++ *      its such a hot chip, it might affect the clocks 
++ *      accuracy if left powered up and you put the DS1302 on top
++ *      of it like I did.
++ * 
++ *      You'll need a DS1302, a 32.768 khz crystal (6pf), and a
++ *      lithium battery/holder.
++ *
++ *	Connect the DS1302 as follows:
++ * 
++ *		PIN 1	VCC2	R8 (side nearest regulator)
++ *		PIN 2	X1	32.768 khz XTAL (6pf)
++ *		PIN 3	X2	32.768 khz XTAL (6pf)
++ *		PIN 4	GND	C41 (side nearest Crontel 7001)
++ *		PIN 5	RST	R11 (side nearest Crontel 7001)
++ * 		PIN 6	IO	R10 (side nearest Crontel 7001)
++ *		PIN 7	SCLK	R9  (side nearest Crontel 7001)
++ * 		PIN 8	VCC1	+3V (to lithium battery + terminal)
++ *      
++ *	I just let the DS1302 sit on top of the Crontel 7001 and
++ *	wired it as above with short pieces of wirewrap wire.  Use
++ *	any +3V lithium battery and connect its minus pin to a 
++ *	ground.   Make sure to use a 6pf cystal else the clock
++ *	will run offspeed.   I got both the DS1302 and the
++ *	crystal from Digikey.
++ *
++ *	This program is free software; you can redistribute it and/or
++ *	modify it under the terms of the GNU General Public License
++ *	as published by the Free Software Foundation; either version
++ *	2 of the License, or (at your option) any later version.
++ *
++ *	Based on other minimal char device drivers, like Alan's
++ *	watchdog, Ted's random, etc. etc.
++ *
++ */
++
++#define RTC_VERSION		"1.0"
++
++#define RTC_IO_EXTENT	0x10	/* Only really two ports, but...	*/
++
++
++#include <linux/config.h>
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/types.h>
++#include <linux/miscdevice.h>
++#include <linux/ioport.h>
++#include <linux/fcntl.h>
++#include <linux/mc146818rtc.h>
++#include <linux/init.h>
++#include <linux/poll.h>
++#include <linux/proc_fs.h>
++#include <linux/spinlock.h>
++#include <linux/delay.h>
++
++#include <asm/io.h>
++#include <asm/uaccess.h>
++#include <asm/system.h>
++
++
++static volatile unsigned int *rtc = (unsigned int *)0xe020000c;
++
++/* IO lines from Webpal 8 bit port */
++
++#define RST		0x02
++#define IO		0x04
++#define SCLK		0x08 
++
++/* DS1302 commands/bits */	
++
++#define CLOCK_CONTROL	0x8e
++#define CLOCK_SEC	0x80
++#define CLOCK_READ	0x01
++#define CLOCK_WRITE	0x00
++#define CLOCK_BURST	0xbe
++
++/* Bit in Register 0 indicating the clock is halted */
++
++#define CLOCK_HALT	0x80
++
++static void start(void);
++static void end(void);
++static void reset(void);
++static void putbyte(unsigned char);
++static unsigned char getbyte(void);
++
++/*
++ *	We sponge a minor off of the misc major. No need slurping
++ *	up another valuable major dev number for this. If you add
++ *	an ioctl, make sure you don't conflict with SPARC's RTC
++ *	ioctls.
++ */
++
++static struct fasync_struct *rtc_async_queue;
++
++static DECLARE_WAIT_QUEUE_HEAD(rtc_wait);
++
++static ssize_t rtc_read(struct file *file, char *buf,
++			size_t count, loff_t *ppos);
++
++static int rtc_ioctl(struct inode *inode, struct file *file,
++		     unsigned int cmd, unsigned long arg);
++
++
++
++static void get_rtc_time (struct rtc_time *rtc_tm);
++
++static int rtc_read_proc(char *page, char **start, off_t off,
++                         int count, int *eof, void *data);
++
++/*
++ *	Bits in rtc_status. (7 bits of room for future expansion)
++ */
++
++#define RTC_IS_OPEN		0x01	/* means /dev/rtc is in use	*/
++
++static unsigned long rtc_status = 0;	/* bitmapped status byte.	*/
++
++/*
++ *	If this driver ever becomes modularised, it will be really nice
++ *	to make the epoch retain its value across module reload...
++ */
++
++static unsigned long epoch = 1900;	/* year corresponding to 0x00	*/
++
++static const unsigned char days_in_mo[] = 
++{0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
++
++
++/*
++ *	Now all the various file operations that we export.
++ */
++
++static ssize_t rtc_read(struct file *file, char *buf,
++			size_t count, loff_t *ppos)
++{
++
++	return -EIO;
++
++}
++
++static int rtc_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
++		     unsigned long arg)
++{
++	struct rtc_time wtime; 
++
++
++	switch (cmd) {
++
++
++	case RTC_RD_TIME:	/* Read the time/date from RTC	*/
++	{
++		get_rtc_time(&wtime);
++		break;
++	}
++	case RTC_SET_TIME:	/* Set the RTC */
++	{
++		struct rtc_time rtc_tm;
++		unsigned char mon, day, hrs, min, sec, leap_yr, wday;
++		unsigned int yrs;
++
++		if (!capable(CAP_SYS_TIME))
++			return -EACCES;
++
++		if (copy_from_user(&rtc_tm, (struct rtc_time*)arg,
++				   sizeof(struct rtc_time)))
++			return -EFAULT;
++
++		yrs = rtc_tm.tm_year + 1900;
++		mon = rtc_tm.tm_mon + 1;   /* tm_mon starts at zero */
++		day = rtc_tm.tm_mday;
++		hrs = rtc_tm.tm_hour;
++		min = rtc_tm.tm_min;
++		sec = rtc_tm.tm_sec;
++		wday = rtc_tm.tm_wday;
++
++		if (yrs < 1970)
++			return -EINVAL;
++
++		leap_yr = ((!(yrs % 4) && (yrs % 100)) || !(yrs % 400));
++
++		if ((mon > 12) || (day == 0))
++			return -EINVAL;
++
++		if (day > (days_in_mo[mon] + ((mon == 2) && leap_yr)))
++			return -EINVAL;
++			
++		if ((hrs >= 24) || (min >= 60) || (sec >= 60))
++			return -EINVAL;
++
++		if ((yrs -= epoch) > 255)    /* They are unsigned */
++			return -EINVAL;
++
++		spin_lock_irq(&rtc_lock);
++
++		/* These limits and adjustments are independant of
++		 * whether the chip is in binary mode or not.
++		 */
++		if (yrs > 169) {
++			spin_unlock_irq(&rtc_lock);
++			return -EINVAL;
++		}
++		if (yrs >= 100)
++			yrs -= 100;
++			
++		start();
++		putbyte(CLOCK_BURST + CLOCK_WRITE);
++		
++		putbyte(BIN_TO_BCD(sec));
++		putbyte(BIN_TO_BCD(min));
++		putbyte(BIN_TO_BCD(hrs));
++		putbyte(BIN_TO_BCD(day));
++		putbyte(BIN_TO_BCD(mon));
++		putbyte(BIN_TO_BCD(wday));
++		putbyte(BIN_TO_BCD(yrs));
++		putbyte(0);
++		
++		end();
++
++		spin_unlock_irq(&rtc_lock);
++		return 0;
++	}
++
++	case RTC_EPOCH_READ:	/* Read the epoch.	*/
++	{
++		return put_user (epoch, (unsigned long *)arg);
++	}
++	case RTC_EPOCH_SET:	/* Set the epoch.	*/
++	{
++		/* 
++		 * There were no RTC clocks before 1900.
++		 */
++		if (arg < 1900)
++			return -EINVAL;
++
++		if (!capable(CAP_SYS_TIME))
++			return -EACCES;
++
++		epoch = arg;
++		return 0;
++	}
++	default:
++		return -EINVAL;
++	}
++	return copy_to_user((void *)arg, &wtime, sizeof wtime) ? -EFAULT : 0;
++}
++
++/*
++ *	We enforce only one user at a time here with the open/close.
++ *	Also clear the previous interrupt data on an open, and clean
++ *	up things on a close.
++ */
++
++/* We use rtc_lock to protect against concurrent opens. So the BKL is not
++ * needed here. Or anywhere else in this driver. */
++static int rtc_open(struct inode *inode, struct file *file)
++{
++	spin_lock_irq (&rtc_lock);
++
++	if(rtc_status & RTC_IS_OPEN)
++		goto out_busy;
++
++	rtc_status |= RTC_IS_OPEN;
++
++	spin_unlock_irq (&rtc_lock);
++	return 0;
++
++out_busy:
++	spin_unlock_irq (&rtc_lock);
++	return -EBUSY;
++}
++
++static int rtc_fasync (int fd, struct file *filp, int on)
++
++{
++	return fasync_helper (fd, filp, on, &rtc_async_queue);
++}
++
++static int rtc_release(struct inode *inode, struct file *file)
++{
++
++	/* No need for locking -- nobody else can do anything until this rmw is
++	 * committed, and no timer is running. */
++	rtc_status &= ~RTC_IS_OPEN;
++	return 0;
++}
++
++
++
++/*
++ *	The various file operations we support.
++ */
++
++static struct file_operations rtc_fops = {
++	owner:		THIS_MODULE,
++	llseek:		no_llseek,
++	read:		rtc_read,
++	ioctl:		rtc_ioctl,
++	open:		rtc_open,
++	release:	rtc_release,
++	fasync:		rtc_fasync,
++};
++
++static struct miscdevice rtc_dev=
++{
++	RTC_MINOR,
++	"rtc",
++	&rtc_fops
++};
++
++static int __init rtc_init(void)
++{
++	unsigned char val;
++
++
++	// if (check_region (RTC_PORT (0), RTC_IO_EXTENT))
++	// {
++	//	printk(KERN_ERR "rtc: I/O port %d is not free.\n", RTC_PORT (0));
++	//	return -EIO;
++	// }
++
++
++	// request_region(RTC_PORT(0), RTC_IO_EXTENT, "rtc");
++
++	misc_register(&rtc_dev);
++	
++	create_proc_read_entry ("driver/rtc", 0, 0, rtc_read_proc, NULL);
++	
++	reset();
++	
++	/* DS1302 initialization */
++	
++	/* Clear WP (write protect) bit */ 
++
++	start();
++	putbyte(CLOCK_CONTROL + CLOCK_WRITE);
++	putbyte(0x00);
++	end();
++	
++	/* Read CH (clock halt) bit.  If set, clear it */
++	/* If the clock is halted, its ok to just
++	   clear the CH bit and rewrite value back to
++	   DS1302 */
++	
++	start();
++	putbyte(CLOCK_SEC + CLOCK_READ);
++	val = getbyte();
++	end();
++	
++	if (val & CLOCK_HALT) {   /* CH set, clear it */
++		start();
++		putbyte(CLOCK_SEC + CLOCK_WRITE);
++		putbyte(val & ~CLOCK_HALT);
++		end();
++	}
++	
++	printk(KERN_INFO "Webpal Real Time Clock Driver v" RTC_VERSION "\n");
++
++	return 0;
++}
++
++static void __exit rtc_exit (void)
++{
++	remove_proc_entry ("driver/rtc", NULL);
++	misc_deregister(&rtc_dev);
++
++	// release_region (RTC_PORT (0), RTC_IO_EXTENT);
++
++}
++
++module_init(rtc_init);
++module_exit(rtc_exit);
++EXPORT_NO_SYMBOLS;
++
++
++
++/*
++ *	Info exported via "/proc/driver/rtc".
++ */
++
++static int rtc_proc_output (char *buf)
++{
++	char *p;
++	struct rtc_time tm;
++
++	p = buf;
++
++	get_rtc_time(&tm);
++
++	/*
++	 * There is no way to tell if the luser has the RTC set for local
++	 * time or for Universal Standard Time (GMT). Probably local though.
++	 */
++	p += sprintf(p,
++		     "rtc_time\t: %02d:%02d:%02d\n"
++		     "rtc_date\t: %04d-%02d-%02d\n"
++	 	     "rtc_epoch\t: %04lu\n",
++		     tm.tm_hour, tm.tm_min, tm.tm_sec,
++		     tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, epoch);
++
++	p += sprintf(p,
++		     "DST_enable\t: no\n"
++		     "BCD\t\t: yes\n"
++		     "24hr\t\t: yes\n"
++		     "square_wave\t: no\n"
++		     "alarm_IRQ\t: no\n"
++		     "update_IRQ\t: no\n"
++		     "periodic_IRQ\t: no\n"
++		     "periodic_freq\t: 0\n"
++		     "batt_status\t: okay\n");
++
++	return  p - buf;
++}
++
++static int rtc_read_proc(char *page, char **start, off_t off,
++                         int count, int *eof, void *data)
++{
++        int len = rtc_proc_output (page);
++        if (len <= off+count) *eof = 1;
++        *start = page + off;
++        len -= off;
++        if (len>count) len = count;
++        if (len<0) len = 0;
++        return len;
++}
++
++
++
++static void get_rtc_time(struct rtc_time *rtc_tm)
++{
++	/*
++	 * Only the values that we read from the RTC are set. We leave
++	 * tm_wday, tm_yday and tm_isdst untouched. Even though the
++	 * RTC has RTC_DAY_OF_WEEK, we ignore it, as it is only updated
++	 * by the RTC when initially set to a non-zero value.
++	 */
++	spin_lock_irq(&rtc_lock);
++	
++	start();
++	putbyte(CLOCK_BURST + CLOCK_READ);
++	
++	rtc_tm->tm_sec = getbyte();
++	rtc_tm->tm_min = getbyte();
++	rtc_tm->tm_hour = getbyte();
++	rtc_tm->tm_mday = getbyte();
++	rtc_tm->tm_mon = getbyte();
++	rtc_tm->tm_wday = getbyte();
++	rtc_tm->tm_year = getbyte();
++	getbyte();
++	
++	end();
++	
++	rtc_tm->tm_isdst = 0;
++
++	spin_unlock_irq(&rtc_lock);
++
++
++	BCD_TO_BIN(rtc_tm->tm_sec);
++	BCD_TO_BIN(rtc_tm->tm_min);
++	BCD_TO_BIN(rtc_tm->tm_hour);
++	BCD_TO_BIN(rtc_tm->tm_mday);
++	BCD_TO_BIN(rtc_tm->tm_mon);
++	BCD_TO_BIN(rtc_tm->tm_year);
++
++	/*
++	 * Account for differences between how the RTC uses the values
++	 * and how they are defined in a struct rtc_time;
++	 */
++	if ((rtc_tm->tm_year += (epoch - 1900)) <= 69)
++		rtc_tm->tm_year += 100;
++
++	rtc_tm->tm_mon--;
++}
++
++/* Initialize the lines to the DS1302 */
++/* Clear RST and SCLK */
++/* Set IO pin to put it in input state. */
++/* If you don't wish to turn off the power to Crontel
++   chip here, comment out the statement below */
++
++static void reset()
++{
++	*rtc &= ~(0x20);  	 /* Turn off power to Crontel chip */
++	*rtc &= ~(RST+SCLK);
++	*rtc |= IO;
++	udelay(10);
++}
++
++/* Start DS1302 operation by raising RST */
++
++static void start() 
++{
++	udelay(2);	
++	*rtc |= RST;
++	udelay(2);
++}
++
++/* End DS1302 operation by lowering RST */
++	
++static void end()
++{
++	udelay(2);
++	*rtc &= ~RST;
++	*rtc |= IO;
++}
++
++/* Output 8 bits to DS1302 */
++/* IO pin is left in hi (input)
++   state upon return */
++
++static void putbyte(unsigned char value)
++{
++	int i;
++	int j = 0;
++	
++	for (i=0; i < 8 ; i++) {
++		j = 0;
++		if (value & 0x01)
++			*rtc |= IO;
++		else
++			*rtc &= ~IO;
++		udelay(1);	
++		value >>= 1;
++		*rtc |= SCLK;
++		udelay(1);
++		if (i == 7)
++			*rtc |= IO;
++		*rtc &= ~SCLK;		
++		udelay(1);
++	}
++}
++
++/* Read 8 bits from DS1302 */
++
++static unsigned char getbyte()
++{
++	int i;
++	unsigned char value = 0;
++	
++	for (i=0; i < 8; i++) {
++		value >>= 1;
++		if (*rtc & IO)
++			value |= 0x80;
++		*rtc |= SCLK;
++		udelay(1);
++		*rtc &= ~SCLK;
++		udelay(1);
++	}			 
++	return value;
++}
++
++MODULE_AUTHOR("Bill Danielson");
++MODULE_LICENSE("GPL");
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/mtd/bootldr.c linux-2.4.18-rmk4/drivers/mtd/bootldr.c
+--- linux-orig-2.4.18-rmk4/drivers/mtd/bootldr.c	2005-03-04 14:03:33.659836864 -0800
++++ linux-2.4.18-rmk4/drivers/mtd/bootldr.c	2003-09-07 09:04:35.000000000 -0700
+@@ -42,7 +42,7 @@
+ 	char *names; 
+         int ret = 0;
+ 
+-        printk(__FUNCTION__ "{%s}\n", cmdline);
++        /* printk(__FUNCTION__ "{%s}\n", cmdline); */
+         /* first, tokenize the line, validate format, and count partitions */
+         while (start) {
+                 char *comma_pos = strchr(start, ',');
+@@ -71,9 +71,9 @@
+ 
+                 npartitions++;
+ 
+-                printk("\t name=%s\n", start);
++                /* printk("\t name=%s\n", start);
+                 printk("\t at_pos=%s\n", at_pos+1);
+-                printk("\t colon_pos=%s\n", colon_pos+1);
++                printk("\t colon_pos=%s\n", colon_pos+1); */
+ 
+                 if (comma_pos) {
+                         *comma_pos = 0;
+@@ -91,7 +91,7 @@
+         /* rewind */
+         start = cmdline;
+ 
+-        printk("npartitions=%d\n", npartitions);
++        /* printk("npartitions=%d\n", npartitions); */
+ 
+ 	parts = kmalloc(sizeof(struct mtd_partition)*npartitions + namelen, GFP_KERNEL);
+ 	if (!parts) {
+@@ -116,8 +116,8 @@
+ 		parts[i].offset = simple_strtoul(offset, NULL, 0);
+ 		parts[i].mask_flags = 0;
+ 		
+-                printk("        partition %s o=%x s=%x\n",
+-                       parts[i].name, parts[i].offset, parts[i].size);
++                /* printk("        partition %s o=%x s=%x\n",
++                       parts[i].name, parts[i].offset, parts[i].size); */
+ 
+                 start = size + strlen(size) + 1;
+ 	}
+@@ -127,7 +127,7 @@
+                 *pparts = parts;
+ 
+  out:
+-        printk(__FUNCTION__ ": ret=%d\n", ret);
++        /* printk(__FUNCTION__ ": ret=%d\n", ret); */
+         return ret;
+ }
+ 
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/mtd/chips/amd_flash.c linux-2.4.18-rmk4/drivers/mtd/chips/amd_flash.c
+--- linux-orig-2.4.18-rmk4/drivers/mtd/chips/amd_flash.c	2005-03-04 14:03:33.661836560 -0800
++++ linux-2.4.18-rmk4/drivers/mtd/chips/amd_flash.c	2003-09-30 15:24:40.000000000 -0700
+@@ -73,6 +73,8 @@
+ #define AT49xV16xT	0x00C2
+ 
+ /* Fujitsu */
++#define MBM29F800BA	0x2258
++#define MBM29F800TA	0x22D6
+ #define MBM29LV160TE	0x22C4
+ #define MBM29LV160BE	0x2249
+ 
+@@ -362,6 +364,7 @@
+ 						mfr_id_other &= 0xffff;
+ 						dev_id_other &= 0xffff;
+ 					}
++						
+ 					if ((mfr_id_other == mfr_id) &&
+ 					    (dev_id_other == dev_id)) {
+ 
+@@ -524,6 +527,18 @@
+ 			{ offset: 0x010000, erasesize: 0x10000, numblocks: 15 }
+ 		}
+ 	}, {
++		mfr_id: MANUFACTURER_FUJITSU,
++		dev_id: MBM29F800BA,
++		name: "Fujitsu MBM29F800BA",
++		size: 0x00100000,
++		numeraseregions: 4,
++		regions: {
++			{ offset: 0x000000, erasesize: 0x04000, numblocks:  1 },
++			{ offset: 0x004000, erasesize: 0x02000, numblocks:  2 },
++			{ offset: 0x008000, erasesize: 0x08000, numblocks:  1 },
++			{ offset: 0x010000, erasesize: 0x10000, numblocks: 15 }
++		}
++	}, {
+ 		mfr_id: MANUFACTURER_AMD,
+ 		dev_id: AM29LV800BT,
+ 		name: "AMD AM29LV800BT",
+@@ -548,6 +563,18 @@
+ 			{ offset: 0x0FC000, erasesize: 0x04000, numblocks:  1 }
+ 		}
+ 	}, {
++		mfr_id: MANUFACTURER_FUJITSU,
++		dev_id: MBM29F800TA,
++		name: "Fujitsu MBM29F800TA",
++		size: 0x00100000,
++		numeraseregions: 4,
++		regions: {
++			{ offset: 0x000000, erasesize: 0x10000, numblocks: 15 },
++			{ offset: 0x0F0000, erasesize: 0x08000, numblocks:  1 },
++			{ offset: 0x0F8000, erasesize: 0x02000, numblocks:  2 },
++			{ offset: 0x0FC000, erasesize: 0x04000, numblocks:  1 }
++		}
++	}, {
+ 		mfr_id: MANUFACTURER_AMD,
+ 		dev_id: AM29LV800BB,
+ 		name: "AMD AM29LV800BB",
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/mtd/maps/Config.in linux-2.4.18-rmk4/drivers/mtd/maps/Config.in
+--- linux-orig-2.4.18-rmk4/drivers/mtd/maps/Config.in	2005-03-04 14:03:33.689832304 -0800
++++ linux-2.4.18-rmk4/drivers/mtd/maps/Config.in	2003-03-08 10:08:25.000000000 -0800
+@@ -73,6 +73,7 @@
+    dep_tristate '  CFI Flash device mapped on StrongARM SA11x0' CONFIG_MTD_SA1100 $CONFIG_MTD_CFI $CONFIG_ARCH_SA1100 $CONFIG_MTD_PARTITIONS
+    dep_tristate '  CFI Flash device mapped on DC21285 Footbridge' CONFIG_MTD_DC21285 $CONFIG_MTD_CFI $CONFIG_ARCH_FOOTBRIDGE $CONFIG_MTD_PARTITIONS
+    dep_tristate '  CFI Flash device mapped on the XScale IQ80310 board' CONFIG_MTD_IQ80310 $CONFIG_MTD_CFI $CONFIG_ARCH_IQ80310
++   dep_tristate '  CFI Flash device mapped on the WebPal' CONFIG_MTD_WEBPAL $CONFIG_MTD_AMDSTD $CONFIG_ARCH_WEBPAL
+    dep_tristate '  CFI Flash device mapped on the FortuNet board' CONFIG_MTD_FORTUNET $CONFIG_MTD_CFI $CONFIG_MTD_PARTITIONS
+    dep_tristate '  CFI Flash device mapped on Epxa10db' CONFIG_MTD_EPXA10DB $CONFIG_MTD_CFI  $CONFIG_MTD_PARTITIONS $CONFIG_ARCH_CAMELOT
+    dep_tristate '  NV-RAM mapping AUTCPU12 board' CONFIG_MTD_AUTCPU12 $CONFIG_ARCH_AUTCPU12
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/mtd/maps/Makefile linux-2.4.18-rmk4/drivers/mtd/maps/Makefile
+--- linux-orig-2.4.18-rmk4/drivers/mtd/maps/Makefile	2005-03-04 14:03:33.690832152 -0800
++++ linux-2.4.18-rmk4/drivers/mtd/maps/Makefile	2003-03-08 10:08:25.000000000 -0800
+@@ -40,6 +40,7 @@
+ obj-$(CONFIG_MTD_SOLUTIONENGINE)+= solutionengine.o
+ obj-$(CONFIG_MTD_FORTUNET)      += fortunet.o
+ obj-$(CONFIG_MTD_PCI)		+= pci.o
++obj-$(CONFIG_MTD_WEBPAL)	+= webpal.o
+ obj-$(CONFIG_MTD_PB1000)        += pb1xxx-flash.o
+ obj-$(CONFIG_MTD_PB1500)        += pb1xxx-flash.o
+ obj-$(CONFIG_MTD_AUTCPU12)      += autcpu12-nvram.o
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/mtd/maps/webpal.c linux-2.4.18-rmk4/drivers/mtd/maps/webpal.c
+--- linux-orig-2.4.18-rmk4/drivers/mtd/maps/webpal.c	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/drivers/mtd/maps/webpal.c	2004-03-31 14:34:07.000000000 -0800
+@@ -0,0 +1,281 @@
++/*
++ * $Id: webpal.c,v 1.21 2001/10/02 15:05:14 dwmw2 Exp $
++ *
++ * Webpal flash routine
++ * Slightly complicated since the flash is a 16 bit device on 32 bit bus.
++ * Each 32 bit value returns 16 bits in the low bits.     The LS 16 bits come first
++ * followed by the MS 16 bits in the next word.
++ */
++
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/kernel.h>
++
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/map.h>
++#include <linux/mtd/partitions.h>
++
++#include <asm/hardware.h>
++
++#define WINDOW_ADDR FLASH_BASE
++#define WINDOW_SIZE FLASH_SIZE
++
++extern int parse_bootldr_partitions(struct mtd_info *master, struct mtd_partition **pparts);
++
++static struct mtd_info *mymtd;
++static struct mtd_partition *parsed_parts;
++static int flash16bit;
++
++/* 
++  16 bit wide flash routines
++  These routines are complicated by the fact the webpal
++     doesn't have a 16 bit read, so we have to set the
++     flash to be read in 32 bit quantities.  This means
++     each 32 bit read returns only 16 bits in the LS bits.
++     Also, offset need to be multipled by two
++*/
++
++__u8 webpal16_read8(struct map_info *map, unsigned long ofs)
++{
++  return *(__u8 *) (map->map_priv_1 + (ofs & (~1))*2 + (ofs & 1) );
++}
++
++__u16 webpal16_read16(struct map_info *map, unsigned long ofs)
++{
++  return ((*(__u32 *)(map->map_priv_1 + ofs * 2)) & 0xffff);
++}
++
++__u32 webpal16_read32(struct map_info *map, unsigned long ofs)
++{
++   printk("flash read32 not implemented for Webpal 16 bit flash\n");
++   return 0;  
++}
++
++void webpal16_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
++{
++  char *pto = (char *)to;
++  __u32 *pfrom, value;
++ 
++  if (len == 0)
++	return;
++
++  /* If starting address is odd, fetch the value and then store only low byte */
++
++  if (from & 0x01) {
++	pfrom = (__u32 *)(map->map_priv_1 + ((from - 1) * 2));
++	value = *pfrom++;
++	*pto++ = (value >> 8) & 0xff;
++	len--;
++  } else {
++	pfrom = (__u32 *)(map->map_priv_1 + (from * 2));
++  }
++
++  /* Now copy two bytes at a time */
++  while (len > 1) {
++	value = *pfrom++;
++	*pto++ = value & 0xff;
++	*pto++ = (value >> 8) & 0xff;	len -= 2;
++  }
++
++  /* Copy the final byte if necessary */
++  if (len) {
++	value = *pfrom++;
++	*pto++ = value & 0xff;
++  }
++}
++
++void webpal16_write8(struct map_info *map, __u8 d, unsigned long adr)
++{
++ printk("flash write8 not implemented for webpal 16 bit flash\n");
++}
++
++void webpal16_write16(struct map_info *map, __u16 d, unsigned long adr)
++{
++  *(__u32 *)(map->map_priv_1 + adr*2) = d;
++}
++
++void webpal16_write32(struct map_info *map, __u32 d, unsigned long adr)
++{
++   printk("flash write32 not implemented for webpal 16 bit flash\n");
++}
++
++void webpal16_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_t len)
++{
++   printk("flash copy_to not implemented for webpal 16 bit flash\n");
++}
++
++struct map_info webpal16_map = {
++	name: "Webpal",
++	size: WINDOW_SIZE / 2,
++	buswidth: 2,
++	read8: webpal16_read8,
++	read16: webpal16_read16,
++	read32: webpal16_read32,
++	copy_from: webpal16_copy_from,
++	write8: webpal16_write8,
++	write16: webpal16_write16,
++	write32: webpal16_write32,
++	copy_to: webpal16_copy_to,
++	
++	map_priv_1:	WINDOW_ADDR,
++	map_priv_2:	-1,
++};	
++
++/* 32 bit flash routines */
++
++__u8 webpal32_read8(struct map_info *map, unsigned long ofs)
++{
++  return *(__u8 *) (map->map_priv_1 + ofs);
++}
++
++__u16 webpal32_read16(struct map_info *map, unsigned long ofs)
++{
++  printk("flash read16 not implemented for webpal 32 bit flash\n");
++  return 0;
++}
++
++__u32 webpal32_read32(struct map_info *map, unsigned long ofs)
++{
++  return *(__u32 *)(map->map_priv_1 + ofs);
++}
++
++void webpal32_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
++{
++   memcpy(to, (void *)(map->map_priv_1 + from), len);
++}
++
++void webpal32_write8(struct map_info *map, __u8 d, unsigned long adr)
++{
++   printk("flash write8 not implemented for webpal 32 bit flash\n");
++}
++
++void webpal32_write16(struct map_info *map, __u16 d, unsigned long adr)
++{
++   printk("flash write16 not implemented for webpal 32 bit flash\n");
++
++}
++
++void webpal32_write32(struct map_info *map, __u32 d, unsigned long adr)
++{
++  *(__u32 *)(map->map_priv_1 + adr) = d;
++}
++
++void webpal32_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_t len)
++{
++	memcpy((void *)(map->map_priv_1 + to), from, len);
++}
++
++struct map_info webpal32_map = {
++	name:		"Webpal",
++	size:		WINDOW_SIZE,
++	buswidth:	4,
++	read8:		webpal32_read8,
++	read16:		webpal32_read16,
++	read32:		webpal32_read32,
++	copy_from:	webpal32_copy_from,
++	write8:		webpal32_write8,
++	write16:	webpal32_write16,
++	write32:	webpal32_write32,
++	copy_to:	webpal32_copy_to,
++	
++	map_priv_1:	WINDOW_ADDR,
++	map_priv_2:	-1,
++};
++
++// Size is filled in during booting based on flash width 
++
++struct mtd_partition webpal_parts[] = {
++	{
++		name:	"Boot firmware",
++		offset:	0,
++	},
++	{	name:	"Boot parameters",
++		offset:	MTDPART_OFS_APPEND,
++	},
++	{
++		name:	"Kernel",
++		offset:	MTDPART_OFS_APPEND,
++	},
++	{
++		name:   "Root filesystem",
++		offset:	MTDPART_OFS_APPEND,
++		size:	MTDPART_SIZ_FULL,
++	}
++};	
++
++int __init init_webpal(void)
++{
++	int *romcr0 = (int *)(IOMD_BASE + 0x80);
++	
++       	/* printk(KERN_NOTICE "Webpal flash device: %x at %x\n", WINDOW_SIZE,
++	WINDOW_ADDR); */
++	
++	/* Determine flash width based on ROMCR0 value.  */
++	
++	if (*romcr0 & 0x40)	/* 0x40 bit => 16 bit flash */
++		flash16bit = 1;
++	else
++		flash16bit = 0;
++		
++	*romcr0 &= ~0x40;	/* Set interface to 32 bits wide */
++	*romcr0 |= 0x80;	/* Enabling writing */
++	
++	if (flash16bit)
++		mymtd = do_map_probe("amd_flash", &webpal16_map);	
++	else 
++		mymtd = do_map_probe("amd_flash", &webpal32_map);
++	
++	if (mymtd)  {
++		int ret = 1;
++		mymtd->module = THIS_MODULE;
++		
++#ifdef CONFIG_MTD_BOOTLDR_PARTS
++		ret = parse_bootldr_partitions(mymtd, &parsed_parts);
++#else
++		ret  = 0;
++#endif
++		if (ret > 0) {
++			printk(KERN_NOTICE "Using Compaq bootldr definition\n");
++			add_mtd_partitions(mymtd, parsed_parts, ret);
++		} else {
++			printk(KERN_NOTICE "Using default partition definition\n");
++			if(flash16bit) {
++				webpal_parts[0].size = 0x06000;
++				webpal_parts[1].size = 0x02000;
++				webpal_parts[2].size = 0x98000;
++			} else {
++				webpal_parts[0].size = 0x08000;
++				webpal_parts[1].size = 0x04000;
++				webpal_parts[2].size = 0x94000;
++			}	
++			add_mtd_partitions(mymtd, webpal_parts, ret);		
++		}
++		return 0;
++	}
++	
++	printk(KERN_NOTICE "No flash found\n");	
++
++	return -ENXIO;
++}
++
++static void __exit cleanup_webpal(void)
++{
++	int *romcr0 = (int *)(IOMD_BASE + 0x80);
++	
++	if (mymtd) {
++		del_mtd_partitions(mymtd);
++		map_destroy(mymtd);
++	}
++	
++	if (flash16bit) 
++		*romcr0 |= 0x40;	/* Set interface back to 16 bits wide */
++	*romcr0 &= ~0x80;		/* Disable writing */
++		
++}
++
++module_init(init_webpal);
++module_exit(cleanup_webpal);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Bill Danielson  <bigbrd@pacbell.net>");
++MODULE_DESCRIPTION("MTD map driver for WebPal board");
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/mtd/maps/webpal.c.old linux-2.4.18-rmk4/drivers/mtd/maps/webpal.c.old
+--- linux-orig-2.4.18-rmk4/drivers/mtd/maps/webpal.c.old	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/drivers/mtd/maps/webpal.c.old	2004-03-31 14:08:50.000000000 -0800
+@@ -0,0 +1,352 @@
++/*
++ * $Id: webpal.c,v 1.21 2001/10/02 15:05:14 dwmw2 Exp $
++ *
++ * Webpal flash routine
++ * Slightly complicated since the flash is a 16 bit device on 32 bit bus.
++ * Each 32 bit value returns 16 bits in the low bits.     The LS 16 bits come first
++ * followed by the MS 16 bits in the next word.
++ */
++
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/kernel.h>
++
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/map.h>
++#include <linux/mtd/partitions.h>
++
++#include <asm/hardware.h>
++
++#define WINDOW_ADDR FLASH_BASE
++#define WINDOW_SIZE FLASH_SIZE
++
++extern int parse_bootldr_partitions(struct mtd_info *master, struct mtd_partition **pparts);
++
++static struct mtd_info *mymtd;
++static struct mtd_partition *parsed_parts;
++static int flash16bit;
++
++/* 
++  16 bit wide flash routines
++  These routines are complicated by the fact the webpal
++     doesn't have a 16 bit read, so we have to set the
++     flash to be read in 32 bit quantities.  This means
++     each 32 bit read returns only 16 bits in the LS bits.
++     Also, offset need to be multipled by two
++*/
++
++__u8 webpal16_read8(struct map_info *map, unsigned long ofs)
++{
++  return *(__u8 *) (map->map_priv_1 + (ofs & (~1))*2 + (ofs & 1) );
++}
++
++__u16 webpal16_read16(struct map_info *map, unsigned long ofs)
++{
++  return ((*(__u32 *)(map->map_priv_1 + ofs * 2)) & 0xffff);
++}
++
++__u32 webpal16_read32(struct map_info *map, unsigned long ofs)
++{
++   printk("flash read32 not implemented for Webpal 16 bit flash\n");
++   return 0;  
++}
++
++void webpal16_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
++{
++  char *pto = (char *)to;
++  __u32 *pfrom, value;
++ 
++  if (len == 0)
++	return;
++
++  /* If starting address is odd, fetch the value and then store only low byte */
++
++  if (from & 0x01) {
++	pfrom = (__u32 *)(map->map_priv_1 + ((from - 1) * 2));
++	value = *pfrom++;
++	*pto++ = (value >> 8) & 0xff;
++	len--;
++  } else {
++	pfrom = (__u32 *)(map->map_priv_1 + (from * 2));
++  }
++
++  /* Now copy two bytes at a time */
++  while (len > 1) {
++	value = *pfrom++;
++	*pto++ = value & 0xff;
++	*pto++ = (value >> 8) & 0xff;	len -= 2;
++  }
++
++  /* Copy the final byte if necessary */
++  if (len) {
++	value = *pfrom++;
++	*pto++ = value & 0xff;
++  }
++}
++
++void webpal16_write8(struct map_info *map, __u8 d, unsigned long adr)
++{
++ printk("flash write8 not implemented for webpal 16 bit flash\n");
++}
++
++void webpal16_write16(struct map_info *map, __u16 d, unsigned long adr)
++{
++  *(__u32 *)(map->map_priv_1 + adr*2) = d;
++}
++
++void webpal16_write32(struct map_info *map, __u32 d, unsigned long adr)
++{
++   printk("flash write32 not implemented for webpal 16 bit flash\n");
++}
++
++void webpal16_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_t len)
++{
++   printk("flash copy_to not implemented for webpal 16 bit flash\n");
++}
++
++struct map_info webpal16_map = {
++	name: "Webpal",
++	size: WINDOW_SIZE / 2,
++	buswidth: 2,
++	read8: webpal16_read8,
++	read16: webpal16_read16,
++	read32: webpal16_read32,
++	copy_from: webpal16_copy_from,
++	write8: webpal16_write8,
++	write16: webpal16_write16,
++	write32: webpal16_write32,
++	copy_to: webpal16_copy_to,
++	
++	map_priv_1:	WINDOW_ADDR,
++	map_priv_2:	-1,
++};	
++
++/* 32 bit flash routines */
++
++__u8 webpal32_read8(struct map_info *map, unsigned long ofs)
++{
++  return *(__u8 *) (map->map_priv_1 + ofs);
++}
++
++__u16 webpal32_read16(struct map_info *map, unsigned long ofs)
++{
++  printk("flash read16 not implemented for webpal 32 bit flash\n");
++  return 0;
++}
++
++__u32 webpal32_read32(struct map_info *map, unsigned long ofs)
++{
++  return *(__u32 *)(map->map_priv_1 + ofs);
++}
++
++void webpal32_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
++{
++   memcpy(to, (void *)(map->map_priv_1 + from), len);
++}
++
++void webpal32_write8(struct map_info *map, __u8 d, unsigned long adr)
++{
++   printk("flash write8 not implemented for webpal 32 bit flash\n");
++}
++
++void webpal32_write16(struct map_info *map, __u16 d, unsigned long adr)
++{
++   printk("flash write16 not implemented for webpal 32 bit flash\n");
++
++}
++
++void webpal32_write32(struct map_info *map, __u32 d, unsigned long adr)
++{
++  *(__u32 *)(map->map_priv_1 + adr) = d;
++}
++
++void webpal32_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_t len)
++{
++	memcpy((void *)(map->map_priv_1 + to), from, len);
++}
++
++struct map_info webpal32_map = {
++	name:		"Webpal",
++	size:		WINDOW_SIZE,
++	buswidth:	4,
++	read8:		webpal32_read8,
++	read16:		webpal32_read16,
++	read32:		webpal32_read32,
++	copy_from:	webpal32_copy_from,
++	write8:		webpal32_write8,
++	write16:	webpal32_write16,
++	write32:	webpal32_write32,
++	copy_to:	webpal32_copy_to,
++	
++	map_priv_1:	WINDOW_ADDR,
++	map_priv_2:	-1,
++};
++
++
++static int webpal_mtd_read (struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf)
++{
++	return mymtd->read(mymtd, from + (unsigned long)mtd->priv, len, retlen, buf);
++}
++
++static int webpal_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char *buf)
++{
++	return mymtd->write(mymtd, to + (unsigned long)mtd->priv, len, retlen, buf);
++}
++
++static int webpal_mtd_erase (struct mtd_info *mtd, struct erase_info *instr)
++{
++	instr->addr += (unsigned long)mtd->priv;
++	return mymtd->erase(mymtd, instr);
++}
++
++static void webpal_mtd_sync (struct mtd_info *mtd)
++{
++	mymtd->sync(mymtd);
++}
++
++static int webpal_mtd_suspend (struct mtd_info *mtd)
++{
++	return mymtd->suspend(mymtd);
++}
++
++static void webpal_mtd_resume (struct mtd_info *mtd)
++{
++	mymtd->resume(mymtd);
++}
++
++
++static struct mtd_info webpal_mtds[4] = {  /* boot, params, kernel, fs */
++	{
++		type: MTD_NORFLASH,
++		flags: MTD_CAP_NORFLASH,
++		size: 0x6000,
++		erasesize: 0x6000,
++		name: "Webpal boot firmware",
++		module: THIS_MODULE,
++		erase: webpal_mtd_erase,
++		read: webpal_mtd_read,
++		write: webpal_mtd_write,
++		suspend: webpal_mtd_suspend,
++		resume: webpal_mtd_resume,
++		sync: webpal_mtd_sync,
++		priv: (void *)0x00000
++	},
++	{
++		type: MTD_NORFLASH,
++		flags: MTD_CAP_NORFLASH,
++		size: 0x2000,
++		erasesize: 0x2000,
++		name: "Webpal parameters",
++		module: THIS_MODULE,
++		erase: webpal_mtd_erase,
++		read: webpal_mtd_read,
++		write: webpal_mtd_write,
++		suspend: webpal_mtd_suspend,
++		resume: webpal_mtd_resume,
++		sync: webpal_mtd_sync,
++		priv: (void *)0x06000
++	},
++	{
++		type: MTD_NORFLASH,
++		flags: MTD_CAP_NORFLASH,
++		size: 0xA0000,
++		erasesize: 0xA0000,
++		name: "Webpal kernel",
++		module: THIS_MODULE,
++		erase: webpal_mtd_erase,
++		read: webpal_mtd_read,
++		write: webpal_mtd_write,
++		suspend: webpal_mtd_suspend,
++		resume: webpal_mtd_resume,
++		sync: webpal_mtd_sync,
++		priv: (void *)0x60000
++	},
++	{
++		type: MTD_NORFLASH,
++		flags: MTD_CAP_NORFLASH,
++		size: 0x58000,
++		erasesize: 0x58000,
++		name: "Webpal root filesystem",
++		module: THIS_MODULE,
++		erase: webpal_mtd_erase,
++		read: webpal_mtd_read,
++		write: webpal_mtd_write,
++		suspend: webpal_mtd_suspend,
++		resume: webpal_mtd_resume,
++		sync: webpal_mtd_sync,
++		priv: (void *)0x08000
++	}
++};
++
++int __init init_webpal(void)
++{
++	int *romcr0 = (int *)(IOMD_BASE + 0x80);
++	
++       	/* printk(KERN_NOTICE "Webpal flash device: %x at %x\n", WINDOW_SIZE,
++	WINDOW_ADDR); */
++	
++	/* Determine flash width based on ROMCR0 value.  */
++	
++	if (*romcr0 & 0x40)	/* 0x40 bit => 16 bit flash */
++		flash16bit = 1;
++	else
++		flash16bit = 0;
++		
++	*romcr0 &= ~0x40;	/* Set interface to 32 bits wide */
++	*romcr0 |= 0x80;	/* Enabling writing */
++	
++	if (flash16bit)
++		mymtd = do_map_probe("amd_flash", &webpal16_map);	
++	else 
++		mymtd = do_map_probe("amd_flash", &webpal32_map);
++	
++	if (mymtd)  {
++		int ret = 1;
++		mymtd->module = THIS_MODULE;
++		
++#ifdef CONFIG_MTD_BOOTLDR_PARTS
++		ret = parse_bootldr_partitions(mymtd, &parsed_parts);
++		if (ret > 0) {
++			printk(KERN_NOTICE "Using Compaq bootldr definition\n");
++			add_mtd_partitions(mymtd, parsed_parts, ret);
++		} else {
++#else
++		if (ret) {
++#endif	
++			add_mtd_device(&webpal_mtds[3]);
++			add_mtd_device(&webpal_mtds[0]);
++			add_mtd_device(&webpal_mtds[1]);
++			add_mtd_device(&webpal_mtds[2]);
++		}
++		return 0;
++	}
++	
++	printk(KERN_NOTICE "No flash found\n");	
++
++	return -ENXIO;
++}
++
++static void __exit cleanup_webpal(void)
++{
++	int *romcr0 = (int *)(IOMD_BASE + 0x80);
++	
++	if (mymtd) {
++		del_mtd_device(&webpal_mtds[3]);
++		del_mtd_device(&webpal_mtds[1]);
++		del_mtd_device(&webpal_mtds[0]);
++		del_mtd_device(&webpal_mtds[2]);
++		map_destroy(mymtd);
++	}
++	
++	if (flash16bit) 
++		*romcr0 |= 0x40;	/* Set interface back to 16 bits wide */
++	*romcr0 &= ~0x80;		/* Disable writing */
++		
++}
++
++module_init(init_webpal);
++module_exit(cleanup_webpal);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Bill Danielson  <bigbrd@pacbell.net>");
++MODULE_DESCRIPTION("MTD map driver for WebPal board");
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/mtd/mtdpart.c linux-2.4.18-rmk4/drivers/mtd/mtdpart.c
+--- linux-orig-2.4.18-rmk4/drivers/mtd/mtdpart.c	2005-03-04 14:03:33.724826984 -0800
++++ linux-2.4.18-rmk4/drivers/mtd/mtdpart.c	2003-10-15 12:46:26.000000000 -0700
+@@ -309,6 +309,10 @@
+ 			/* Single erase size */
+ 			slave->mtd.erasesize = master->erasesize;
+ 		}
++		
++#if 0
++
++	/* This code is broken... FIXME */
+ 
+ 		if ((slave->mtd.flags & MTD_WRITEABLE) && 
+ 		    (slave->offset % slave->mtd.erasesize)) {
+@@ -317,6 +321,8 @@
+ 			slave->mtd.flags &= ~MTD_WRITEABLE;
+ 			printk ("mtd: partition \"%s\" doesn't start on an erase block boundary -- force read-only\n",
+ 				parts[i].name);
++			printk ("mtd: offset %x size %x\n", slave->offset,
++				slave->mtd.erasesize);
+ 		}
+ 		if ((slave->mtd.flags & MTD_WRITEABLE) && 
+ 		    (slave->mtd.size % slave->mtd.erasesize)) {
+@@ -324,6 +330,8 @@
+ 			printk ("mtd: partition \"%s\" doesn't end on an erase block -- force read-only\n",
+ 				parts[i].name);
+ 		}
++		
++#endif
+ 
+ 		if(parts[i].mtdp)
+ 		{	/* store the object pointer (caller may or may not register it */
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/net/ne.c linux-2.4.18-rmk4/drivers/net/ne.c
+--- linux-orig-2.4.18-rmk4/drivers/net/ne.c	2001-09-30 12:26:07.000000000 -0700
++++ linux-2.4.18-rmk4/drivers/net/ne.c	2004-01-30 00:43:10.000000000 -0800
+@@ -71,7 +71,11 @@
+ /* A zero-terminated list of I/O addresses to be probed at boot. */
+ #ifndef MODULE
+ static unsigned int netcard_portlist[] __initdata = {
++#ifdef CONFIG_ARCH_WEBPAL
++	0x80400300, 0x80400280, 0x80400320, 0x80400340, 0x80400360, 0x80400380, 0
++#else
+ 	0x300, 0x280, 0x320, 0x340, 0x360, 0x380, 0
++#endif
+ };
+ #endif
+ 
+@@ -203,12 +207,21 @@
+ 				continue;
+ 			if (idev->activate(idev))
+ 				continue;
++
+ 			/* if no irq, search for next */
+ 			if (idev->irq_resource[0].start == 0)
+ 				continue;
++
+ 			/* found it */
++#ifdef CONFIG_ARCH_WEBPAL
++			/* Adjust PNP address and IRQ. */
++			/* Adding 6 to IRQ only works for IRQ3  :-)  */
++			dev->base_addr = idev->resource[0].start + 0x80400000;
++			dev->irq = idev->irq_resource[0].start + 6;
++#else
+ 			dev->base_addr = idev->resource[0].start;
+ 			dev->irq = idev->irq_resource[0].start;
++#endif
+ 			printk(KERN_INFO "ne.c: ISAPnP reports %s at i/o %#lx, irq %d.\n",
+ 				(char *) isapnp_clone_list[i].driver_data,
+ 
+@@ -276,6 +289,7 @@
+ 	   cause the driver to skip these parts of the probe. */
+ 
+ 	bad_card = ((dev->base_addr != 0) && (dev->mem_end == 0xbad));
++	/* bad_card = 1; */
+ 
+ 	/* Reset card. Who knows what dain-bramaged state it was left in. */
+ 
+@@ -335,8 +349,8 @@
+ 
+ 	if (wordlength == 2)
+ 	{
+-		for (i = 0; i < 16; i++)
+-			SA_prom[i] = SA_prom[i+i];
++		for (i = 1; i < 16; i++)
++			SA_prom[i] = SA_prom[i*2];
+ 		/* We must set the 8390 for word mode. */
+ 		outb_p(0x49, ioaddr + EN0_DCFG);
+ 		start_page = NESM_START_PG;
+@@ -346,7 +360,8 @@
+ 		stop_page = NE1SM_STOP_PG;
+ 	}
+ 
+-	neX000 = (SA_prom[14] == 0x57  &&  SA_prom[15] == 0x57);
++	neX000 = ((SA_prom[14] == 0x57  &&  SA_prom[15] == 0x57) ||
++		 (SA_prom[14] == 0x42  &&  SA_prom[15] == 0x42));
+ 	ctron =  (SA_prom[0] == 0x00 && SA_prom[1] == 0x00 && SA_prom[2] == 0x1d);
+ 	copam =  (SA_prom[14] == 0x49 && SA_prom[15] == 0x00);
+ 
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/pnp/isapnp.c linux-2.4.18-rmk4/drivers/pnp/isapnp.c
+--- linux-orig-2.4.18-rmk4/drivers/pnp/isapnp.c	2002-02-25 11:38:03.000000000 -0800
++++ linux-2.4.18-rmk4/drivers/pnp/isapnp.c	2004-01-28 19:27:37.000000000 -0800
+@@ -65,7 +65,12 @@
+ int isapnp_reset = 1;			/* reset all PnP cards (deactivate) */
+ int isapnp_skip_pci_scan;		/* skip PCI resource scanning */
+ int isapnp_verbose = 1;			/* verbose mode */
++#ifndef CONFIG_ARCH_WEBPAL
+ int isapnp_reserve_irq[16] = { [0 ... 15] = -1 };	/* reserve (don't use) some IRQ */
++#else
++int isapnp_reserve_irq[16] = 
++	{0,1,2,4,5,6,7,8,9,10,11,12,13,14,15,-1 }; 	/* reserve (don't use) some IRQ */
++#endif
+ int isapnp_reserve_dma[8] = { [0 ... 7] = -1 };		/* reserve (don't use) some DMA */
+ int isapnp_reserve_io[16] = { [0 ... 15] = -1 };	/* reserve (don't use) some I/O region */
+ int isapnp_reserve_mem[16] = { [0 ... 15] = -1 };	/* reserve (don't use) some memory region */
+@@ -125,6 +130,27 @@
+ static int isapnp_config_activate(struct pci_dev *dev);
+ static int isapnp_config_deactivate(struct pci_dev *dev);
+ 
++#ifdef CONFIG_ARCH_WEBPAL
++
++static inline void write_data(unsigned char x)
++{
++	outb(x, _PNPWRP + 0x80400000);
++}
++
++static inline void write_address(unsigned char x)
++{
++	outb(x, _PIDXR + 0x80400000);
++	udelay(20);
++}
++
++static inline unsigned char read_data(void)
++{
++	unsigned char val = inb(isapnp_rdp + 0x80400000);
++	return val;
++}
++
++#else
++
+ static inline void write_data(unsigned char x)
+ {
+ 	outb(x, _PNPWRP);
+@@ -142,6 +168,8 @@
+ 	return val;
+ }
+ 
++#endif
++
+ unsigned char isapnp_read_byte(unsigned char idx)
+ {
+ 	write_address(idx);
+@@ -509,7 +537,9 @@
+                                                int dependent, int size)
+ {
+ 	unsigned char tmp[3];
++#ifdef CONFIG_PCI
+ 	int i;
++#endif
+ 	struct isapnp_irq *irq, *ptr;
+ 
+ 	isapnp_peek(tmp, size);
+@@ -1691,9 +1721,9 @@
+ 		}
+ 	}
+ #endif
+-	if (request_irq(irq, isapnp_test_handler, SA_INTERRUPT, "isapnp", NULL))
+-		return 1;
+-	free_irq(irq, NULL);
++//	if (request_irq(irq + 6, isapnp_test_handler, SA_INTERRUPT, "isapnp", NULL))
++//		return 1;
++//	free_irq(irq + 6, NULL);
+ 	for (i = 0; i < DEVICE_COUNT_IRQ; i++) {
+ 		if (i == idx)
+ 			continue;
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/sound/Config.in linux-2.4.18-rmk4/drivers/sound/Config.in
+--- linux-orig-2.4.18-rmk4/drivers/sound/Config.in	2005-03-04 14:03:33.883802816 -0800
++++ linux-2.4.18-rmk4/drivers/sound/Config.in	2003-03-11 21:16:29.000000000 -0800
+@@ -207,7 +207,9 @@
+ fi
+ 
+ if [ "$CONFIG_ARM" = "y" ]; then
+-   if [ "$CONFIG_ARCH_ACORN" = "y" -o "$CONFIG_ARCH_CLPS7500" = "y" ]; then
++   if [ "$CONFIG_ARCH_ACORN" = "y" \
++     -o "$CONFIG_ARCH_CLPS7500" = "y"  \
++     -o "$CONFIG_ARCH_WEBPAL" = "y"  ]; then
+       dep_tristate '    VIDC 16-bit sound' CONFIG_SOUND_VIDC $CONFIG_SOUND_OSS
+    fi
+    dep_tristate '    Netwinder WaveArtist' CONFIG_SOUND_WAVEARTIST $CONFIG_SOUND_OSS $CONFIG_ARCH_NETWINDER
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/sound/vidc.c linux-2.4.18-rmk4/drivers/sound/vidc.c
+--- linux-orig-2.4.18-rmk4/drivers/sound/vidc.c	2001-10-11 09:43:30.000000000 -0700
++++ linux-2.4.18-rmk4/drivers/sound/vidc.c	2003-03-11 21:10:06.000000000 -0800
+@@ -198,7 +198,17 @@
+ 		unsigned int hwctrl, hwrate;
+ 		unsigned int newsize, new2size;
+ 
+-		/*
++#if CONFIG_ARCH_WEBPAL
++    /* Modification by Alex Freed.
++       Only the 44.1K (approximately) is available
++       The used codec demands the clock to be 256 times the data rate
++       The clock happens to be 22.1184 MHz so we can get 43200 rate only
++    */
++
++              hwctrl = 2; // codec only works this way
++              hwrate = 8; // written value must be 2
++              rate = 43200;
++#else		/*
+ 		 * If we have selected 44.1kHz, use the DAC clock.
+ 		 */
+ 		if (0 && rate == 44100) {
+@@ -215,6 +225,7 @@
+ 
+ 			rate = VIDC_SOUND_CLOCK / hwrate;
+ 		}
++#endif
+ 
+ 		vidc_writel(0xb0000000 | (hwrate - 2));
+ 		vidc_writel(0xb1000000 | hwctrl);
+@@ -357,6 +368,18 @@
+ 			dma_interrupt = vidc_audio_dma_interrupt;
+ 			vidc_sound_dma_irq(0, NULL, NULL);
+ 			iomd_writeb(DMA_CR_E | 0x10, IOMD_SD0CR);
++			
++#if CONFIG_ARCH_WEBPAL
++    			/* Modification by Alex Freed.
++			   Not sure it belongs in this place,
++       			   but it works every time :))
++        
++       			   The format needs to be switched to "Japanise".
++      		        */
++
++                        iomd_writeb(2, IOMD_VIDMUX); // mode set                       enable_irq(IRQ_DMAS0); // enable IRQ
++#endif
++
+ 
+ 			local_irq_restore(flags);
+ 		}
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/video/acornfb.c linux-2.4.18-rmk4/drivers/video/acornfb.c
+--- linux-orig-2.4.18-rmk4/drivers/video/acornfb.c	2001-11-14 14:52:20.000000000 -0800
++++ linux-2.4.18-rmk4/drivers/video/acornfb.c	2003-03-08 10:08:25.000000000 -0800
+@@ -1763,6 +1763,8 @@
+ 		fb_info.monspecs.hfmax / 1000, fb_info.monspecs.hfmax % 1000,
+ 		fb_info.monspecs.vfmin, fb_info.monspecs.vfmax,
+ 		fb_info.monspecs.dpms ? ", DPMS" : "");
++		
++	printk("Just an extra message\n");
+ 
+ 	if (acornfb_set_var(&init_var, -1, &fb_info))
+ 		printk(KERN_ERR "Acornfb: unable to set display parameters\n");
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/drivers/video/Config.in linux-2.4.18-rmk4/drivers/video/Config.in
+--- linux-orig-2.4.18-rmk4/drivers/video/Config.in	2005-03-04 14:03:33.933795216 -0800
++++ linux-2.4.18-rmk4/drivers/video/Config.in	2003-11-10 12:37:37.000000000 -0800
+@@ -31,7 +31,11 @@
+       fi
+    fi
+    if [ "$CONFIG_ARM" = "y" ]; then
+-     dep_bool '  Acorn VIDC support' CONFIG_FB_ACORN $CONFIG_ARCH_ACORN
++     dep_bool '  WebPal video support' CONFIG_FB_WEBPAL $CONFIG_ARCH_WEBPAL
++     dep_bool '  WebPal IR keyboard support' CONFIG_ARCH_WEBPAL_IR_KEYB $CONFIG_FB_WEBPAL
++     if [ "$CONFIG_FB_WEBPAL" = "y" ]; then
++     	define_bool CONFIG_FB_ACORN y
++     fi
+      dep_bool '  Anakin LCD support' CONFIG_FB_ANAKIN $CONFIG_ARCH_ANAKIN
+      dep_bool '  CLPS711X LCD support' CONFIG_FB_CLPS711X $CONFIG_ARCH_CLPS711X
+      dep_bool '  SA-1100 LCD support' CONFIG_FB_SA1100 $CONFIG_ARCH_SA1100
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/acornfb.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/acornfb.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/acornfb.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/acornfb.h	2004-01-30 00:00:00.000000000 -0800
+@@ -0,0 +1,32 @@
++#include <linux/config.h>
++#define acornfb_valid_pixrate(rate) (rate >= 39325 && rate <= 40119)
++
++static inline void
++acornfb_vidc20_find_rates(struct vidc_timing *vidc,
++			  struct fb_var_screeninfo *var)
++{
++	u_int bandwidth;
++  
++	vidc->control |= VIDC20_CTRL_PIX_CK;
++
++	/* Calculate bandwidth */
++	bandwidth = var->pixclock * 8 / var->bits_per_pixel;
++
++	/* Encode bandwidth as VIDC20 setting */
++	if (bandwidth > 16667*2)
++		vidc->control |= VIDC20_CTRL_FIFO_16;
++	else if (bandwidth > 13333*2)
++		vidc->control |= VIDC20_CTRL_FIFO_20;
++	else if (bandwidth > 11111*2)
++		vidc->control |= VIDC20_CTRL_FIFO_24;
++	else
++		vidc->control |= VIDC20_CTRL_FIFO_28;
++
++	vidc->pll_ctl  = 0x2020;
++}
++
++#define CONFIG_CHRONTEL_7003
++
++#define acornfb_default_control()	VIDC20_CTRL_PIX_HCLK
++
++#define acornfb_default_econtrol()	VIDC20_ECTL_DAC | VIDC20_ECTL_REG(3) | VIDC20_ECTL_ECK
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/dma.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/dma.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/dma.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/dma.h	2004-01-29 23:59:27.000000000 -0800
+@@ -0,0 +1,24 @@
++/*
++ * linux/include/asm-arm/arch-webpal/dma.h
++ *
++ * Copyright (C) 1999 Nexus Electronics Ltd.
++ */
++
++#ifndef __ASM_ARCH_DMA_H
++#define __ASM_ARCH_DMA_H
++
++/* DMA is not yet implemented! It should be the same as acorn, copy over.. */
++
++/*
++ * This is the maximum DMA address that can be DMAd to.
++ * There should not be more than (0xd0000000 - 0xc0000000)
++ * bytes of RAM.
++ */
++#define MAX_DMA_ADDRESS		0xd0000000
++#define MAX_DMA_CHANNELS	3
++
++#define DMA_S0			0
++#define DMA_VIRTUAL_FLOPPY	1
++#define DMA_VIRTUAL_SOUND	2
++
++#endif /* _ASM_ARCH_DMA_H */
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/hardware.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/hardware.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/hardware.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/hardware.h	2004-02-19 15:02:05.000000000 -0800
+@@ -0,0 +1,61 @@
++/*
++ * linux/include/asm-arm/arch-webpal/hardware.h
++ *
++ * Copyright (C) 1996-1999 Russell King.
++ * Copyright (C) 1999 Nexus Electronics Ltd.
++ *
++ * This file contains the hardware definitions of the Webpal.
++ */
++ 
++#ifndef __ASM_ARCH_HARDWARE_H
++#define __ASM_ARCH_HARDWARE_H
++
++#include <asm/arch/memory.h>
++#include <asm/hardware/iomd.h>
++
++/*
++ * What hardware must be present
++ */
++#define HAS_IOMD
++#define HAS_VIDC20
++
++/* Hardware addresses of major areas.
++ *  *_START is the physical address
++ *  *_SIZE  is the size of the region
++ *  *_BASE  is the virtual address
++ */
++
++#define IO_START		0x03000000	/* I/O */
++#define IO_SIZE			0x01000000
++#define IO_BASE			0xe0000000
++
++#define ISA_START		0x08000000	/* ISA for Webpal */
++#define ISA_SIZE		0x00010000
++#define ISA_BASE		0xe1000000
++
++#define FLASH_START		0x00000000	/* Flash for Webpal */
++#define FLASH_SIZE		0x00800000	/* 2MB */
++#define FLASH_BASE		0xe2000000
++
++/* Let's define SCREEN_START for CL7500, even though it's a lie. */
++#define SCREEN_START		0x02000000	/* VRAM */
++#define SCREEN_END		0xdfc00000
++#define SCREEN_BASE		0xdf800000
++
++#define FLUSH_BASE		0xdf000000
++
++#define VIDC_BASE		0xe0400000
++#define IOMD_BASE		0xe0200000
++#define IOC_BASE		0xe0200000
++#define FLOPPYDMA_BASE		0xe002a000
++#define PCIO_BASE		0xe0010000
++
++#define FLUSH_BASE_PHYS		0x00000000	/* ROM */
++
++#define vidc_writel(val)	__raw_writel(val, VIDC_BASE)
++
++/* in/out bias for the ISA slot region */
++#define ISASLOT_IO		0x80400000
++
++#endif
++
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/ide.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/ide.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/ide.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/ide.h	2004-02-19 15:04:02.000000000 -0800
+@@ -0,0 +1,66 @@
++/*
++ * linux/include/asm-arm/arch-webpal/ide.h
++ *
++ * Copyright (c) 1997 Russell King
++ *
++ * Modifications:
++ *  29-07-1998	RMK	Major re-work of IDE architecture specific code
++ *              BRD	Modified for Webpal
++ */
++ 
++#include <asm/irq.h>
++#include <asm/arch/hardware.h>
++
++/*
++ * Set up a hw structure for a specified data port, control port and IRQ.
++ * This should follow whatever the default interface uses.
++ */
++static __inline__ void
++ide_init_hwif_ports(hw_regs_t *hw, int data_port, int ctrl_port, int *irq)
++{
++	ide_ioreg_t reg = data_port;
++	int i;
++
++	memset(hw, 0, sizeof(*hw));
++
++	for (i = IDE_DATA_OFFSET; i <= IDE_STATUS_OFFSET; i++) {
++		hw->io_ports[i] = reg;
++		reg += 1;
++	}
++	if (ctrl_port) {
++		hw->io_ports[IDE_CONTROL_OFFSET] = ctrl_port;
++	} else {
++		hw->io_ports[IDE_CONTROL_OFFSET] = data_port + 0x206;
++	}
++	if (irq != NULL)
++		*irq = 0;
++	hw->io_ports[IDE_IRQ_OFFSET] = 0;
++}
++
++/*
++ * This registers the standard ports for this architecture with the IDE
++ * driver.
++ */
++static __inline__ void
++ide_init_default_hwifs(void)
++{
++   	/*
++	
++	   The WebPal IDE interface is at:
++
++		ide0=0x170,0x376,11
++	
++	   This is hardwired for the PWD-117A pc board of the Webpal
++	   and set in the bootstrap loader for the PWD-117A Vers.01
++	   pcboard version of the Webpal.
++   
++        */
++	
++	hw_regs_t hw;
++
++	ide_init_hwif_ports(&hw, 0x170, 0x376, NULL);
++	hw.irq = IRQ_INT5;
++	ide_register_hw(&hw, NULL);
++
++
++}
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/io.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/io.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/io.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/io.h	2004-02-19 15:01:21.000000000 -0800
+@@ -0,0 +1,10 @@
++/*
++ *
++ * linux/include/asm-arm/arch-webpal/io.h
++ *  same as linux/include/asm-arm/arch-rpc/io.h
++ *
++ */
++
++#include <asm/arch-rpc/io.h>
++ 
++ 
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/irq.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/irq.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/irq.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/irq.h	2004-02-19 15:05:38.000000000 -0800
+@@ -0,0 +1,219 @@
++/*
++ * include/asm-arm/arch-webpal/irq.h
++ *
++ * Copyright (C) 1996 Russell King
++ * Copyright (C) 1999, 2001 Nexus Electronics Ltd.
++ *
++ * Changelog:
++ *   10-10-1996	RMK	Brought up to date with arch-sa110eval
++ *   22-08-1998	RMK	Restructured IRQ routines
++ *   11-08-1999	PJB	Created ARM7500 version, derived from RiscPC code
++ *    1-29-2004 BRD	Created Webpal version
++ */
++
++#include <asm/hardware/iomd.h>
++#include <asm/io.h>
++
++#define fixup_irq(x)	(x)
++
++static void webpal_mask_irq_ack_a(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << irq;
++	val = iomd_readb(IOMD_IRQMASKA);
++	iomd_writeb(val & ~mask, IOMD_IRQMASKA);
++	iomd_writeb(mask, IOMD_IRQCLRA);
++}
++
++static void webpal_mask_irq_a(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << irq;
++	val = iomd_readb(IOMD_IRQMASKA);
++	iomd_writeb(val & ~mask, IOMD_IRQMASKA);
++}
++
++static void webpal_unmask_irq_a(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << irq;
++	val = iomd_readb(IOMD_IRQMASKA);
++	iomd_writeb(val | mask, IOMD_IRQMASKA);
++}
++
++static void webpal_mask_irq_b(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << (irq & 7);
++	val = iomd_readb(IOMD_IRQMASKB);
++	iomd_writeb(val & ~mask, IOMD_IRQMASKB);
++}
++
++static void webpal_unmask_irq_b(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << (irq & 7);
++	val = iomd_readb(IOMD_IRQMASKB);
++	iomd_writeb(val | mask, IOMD_IRQMASKB);
++}
++
++static void webpal_mask_irq_c(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << (irq & 7);
++	val = iomd_readb(IOMD_IRQMASKC);
++	iomd_writeb(val & ~mask, IOMD_IRQMASKC);
++}
++
++static void webpal_unmask_irq_c(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << (irq & 7);
++	val = iomd_readb(IOMD_IRQMASKC);
++	iomd_writeb(val | mask, IOMD_IRQMASKC);
++}
++
++
++static void webpal_mask_irq_d(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << (irq & 7);
++	val = iomd_readb(IOMD_IRQMASKD);
++	iomd_writeb(val & ~mask, IOMD_IRQMASKD);
++}
++
++static void webpal_unmask_irq_d(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << (irq & 7);
++	val = iomd_readb(IOMD_IRQMASKD);
++	iomd_writeb(val | mask, IOMD_IRQMASKD);
++}
++
++static void webpal_mask_irq_dma(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << (irq & 7);
++	val = iomd_readb(IOMD_DMAMASK);
++	iomd_writeb(val & ~mask, IOMD_DMAMASK);
++}
++
++static void webpal_unmask_irq_dma(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << (irq & 7);
++	val = iomd_readb(IOMD_DMAMASK);
++	iomd_writeb(val | mask, IOMD_DMAMASK);
++}
++
++static void webpal_mask_irq_fiq(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << (irq & 7);
++	val = iomd_readb(IOMD_FIQMASK);
++	iomd_writeb(val & ~mask, IOMD_FIQMASK);
++}
++
++static void webpal_unmask_irq_fiq(unsigned int irq)
++{
++	unsigned int val, mask;
++
++	mask = 1 << (irq & 7);
++	val = iomd_readb(IOMD_FIQMASK);
++	iomd_writeb(val | mask, IOMD_FIQMASK);
++}
++
++static void no_action(unsigned int irq)
++{
++}
++
++#ifdef CONFIG_ARCH_CLPS7500
++static struct irqaction irq_isa = { no_action, 0, 0, "isa", NULL, NULL };
++#endif
++
++static __inline__ void irq_init_irq(void)
++{
++	int irq;
++
++	iomd_writeb(0, IOMD_IRQMASKA);
++	iomd_writeb(0, IOMD_IRQMASKB);
++	iomd_writeb(0, IOMD_FIQMASK);
++	iomd_writeb(0, IOMD_DMAMASK);
++
++	for (irq = 0; irq < NR_IRQS; irq++) {
++		switch (irq) {
++		case 0 ... 6:
++			irq_desc[irq].probe_ok = 1;
++		case 7:
++			irq_desc[irq].valid    = 1;
++			irq_desc[irq].mask_ack = webpal_mask_irq_ack_a;
++			irq_desc[irq].mask     = webpal_mask_irq_a;
++			irq_desc[irq].unmask   = webpal_unmask_irq_a;
++			break;
++
++		case 9 ... 15:
++			irq_desc[irq].probe_ok = 1;
++		case 8:
++			irq_desc[irq].valid    = 1;
++			irq_desc[irq].mask_ack = webpal_mask_irq_b;
++			irq_desc[irq].mask     = webpal_mask_irq_b;
++			irq_desc[irq].unmask   = webpal_unmask_irq_b;
++			break;
++			
++
++		case 16 ... 19:
++		case 21 ... 22:
++			irq_desc[irq].noautoenable = 1;
++		case 20:
++			irq_desc[irq].valid    = 1;
++			irq_desc[irq].mask_ack = webpal_mask_irq_dma;
++			irq_desc[irq].mask     = webpal_mask_irq_dma;
++			irq_desc[irq].unmask   = webpal_unmask_irq_dma;
++			break;
++
++		case 24 ... 31:
++			irq_desc[irq].valid    = 1;
++			irq_desc[irq].mask_ack = webpal_mask_irq_c;
++			irq_desc[irq].mask     = webpal_mask_irq_c;
++			irq_desc[irq].unmask   = webpal_unmask_irq_c;
++			break;
++
++		case 40 ... 47:
++			irq_desc[irq].valid    = 1;
++			irq_desc[irq].mask_ack = webpal_mask_irq_d;
++			irq_desc[irq].mask     = webpal_mask_irq_d;
++			irq_desc[irq].unmask   = webpal_unmask_irq_d;
++			break;
++
++		case 48 ... 55:
++			irq_desc[irq].valid      = 1;
++			irq_desc[irq].probe_ok   = 1;
++			irq_desc[irq].mask_ack   = no_action;
++			irq_desc[irq].mask       = no_action;
++			irq_desc[irq].unmask     = no_action;
++			break;
++
++		case 64 ... 72:
++			irq_desc[irq].valid    = 1;
++			irq_desc[irq].mask_ack = webpal_mask_irq_fiq;
++			irq_desc[irq].mask     = webpal_mask_irq_fiq;
++			irq_desc[irq].unmask   = webpal_unmask_irq_fiq;
++			break;
++		}
++	}
++
++	irq_desc[IRQ_KEYBOARDTX].noautoenable = 1;	
++
++}
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/irqs.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/irqs.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/irqs.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/irqs.h	2004-01-29 23:56:26.000000000 -0800
+@@ -0,0 +1,68 @@
++/*
++ * linux/include/asm-arm/arch-webpal/irqs.h
++ *
++ * Copyright (C) 1999 Nexus Electronics Ltd
++ */
++
++#define IRQ_INT2		0
++#define IRQ_INT1		2
++#define IRQ_VSYNCPULSE		3
++#define IRQ_POWERON		4
++#define IRQ_TIMER0		5
++#define IRQ_TIMER1		6
++#define IRQ_FORCE		7
++#define IRQ_INT8		8
++#define IRQ_ISA			9
++#define IRQ_INT6		10
++#define IRQ_INT5		11
++#define IRQ_INT4		12
++#define IRQ_INT3		13
++#define IRQ_KEYBOARDTX		14
++#define IRQ_KEYBOARDRX		15
++
++#define IRQ_DMA0		16
++#define IRQ_DMA1		17
++#define IRQ_DMA2		18
++#define IRQ_DMA3		19
++#define IRQ_DMAS0		20
++#define IRQ_DMAS1		21
++
++#define IRQ_IOP0		24
++#define IRQ_IOP1		25
++#define IRQ_IOP2		26
++#define IRQ_IOP3		27
++#define IRQ_IOP4		28
++#define IRQ_IOP5		29
++#define IRQ_IOP6		30
++#define IRQ_IOP7		31
++
++#define IRQ_MOUSERX		40
++#define IRQ_MOUSETX		41
++#define IRQ_ADC			42
++#define IRQ_EVENT1		43
++#define IRQ_EVENT2		44
++
++#define IRQ_ISA_BASE		48
++#define IRQ_ISA_3		48
++#define IRQ_ISA_4		49
++#define IRQ_ISA_5		50
++#define IRQ_ISA_7		51
++#define IRQ_ISA_9		52
++#define IRQ_ISA_10		53
++#define IRQ_ISA_11		54
++#define IRQ_ISA_14		55	
++
++#define FIQ_INT9		0
++#define FIQ_INT5		1
++#define FIQ_INT6		4
++#define FIQ_INT8		6
++#define FIQ_FORCE		7
++
++/*
++ * This is the offset of the FIQ "IRQ" numbers
++ */
++#define FIQ_START		64
++
++#define IRQ_TIMER		IRQ_TIMER0
++
++#define FIQ_FLOPPYDATA		0
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/keyboard.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/keyboard.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/keyboard.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/keyboard.h	2004-02-12 08:35:01.000000000 -0800
+@@ -0,0 +1,16 @@
++/*
++ * linux/include/asm-arm/arch-webpal/keyboard.h
++ *  from linux/include/asm-arm/arch-rpc/keyboard.h
++ *
++ * Keyboard driver definitions for Webpal architecture
++ *
++ * Copyright (C) 1998-2001 Russell King
++ */
++#include <asm/irq.h>
++#define NR_SCANCODES 128
++
++extern int ps2kbd_init_hw(void);
++
++#define kbd_disable_irq()	disable_irq(IRQ_KEYBOARDRX)
++#define kbd_enable_irq()	enable_irq(IRQ_KEYBOARDRX)
++#define kbd_init_hw()		ps2kbd_init_hw()
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/memory.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/memory.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/memory.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/memory.h	2004-02-19 14:57:50.000000000 -0800
+@@ -0,0 +1,119 @@
++/*
++ * linux/include/asm-arm/arch-webpal/memory.h
++ *
++ * Copyright (c) 1996,1997,1998 Russell King.
++ *
++ * Changelog:
++ *  20-Oct-1996	RMK	Created
++ *  31-Dec-1997	RMK	Fixed definitions to reduce warnings
++ *  11-Jan-1998	RMK	Uninlined to reduce hits on cache
++ *  08-Feb-1998	RMK	Added __virt_to_bus and __bus_to_virt
++ *  21-Mar-1999	RMK	Renamed to memory.h
++ *		RMK	Added TASK_SIZE and PAGE_OFFSET
++ 		BRD	Modified for Webpal
++ */
++#ifndef __ASM_ARCH_MMU_H
++#define __ASM_ARCH_MMU_H
++
++/*
++ * Task size: 3GB
++ */
++#define TASK_SIZE	(0xc0000000UL)
++#define TASK_SIZE_26	(0x04000000UL)
++
++/*
++ * This decides where the kernel will search for a free chunk of vm
++ * space during mmap's.
++ */
++#define TASK_UNMAPPED_BASE (TASK_SIZE / 3)
++
++/*
++ * Page offset: 3GB
++ */
++#define PAGE_OFFSET	(0xc0000000UL)
++#define PHYS_OFFSET	(0x10000000UL)
++
++#define __virt_to_phys__is_a_macro
++#define __virt_to_phys(vpage) ((vpage) - PAGE_OFFSET + PHYS_OFFSET)
++#define __phys_to_virt__is_a_macro
++#define __phys_to_virt(ppage) ((ppage) + PAGE_OFFSET - PHYS_OFFSET)
++
++/*
++ * These are exactly the same on the RiscPC as the
++ * physical memory view.
++ */
++#define __virt_to_bus__is_a_macro
++#define __virt_to_bus(x) __virt_to_phys(x)
++#define __bus_to_virt__is_a_macro
++#define __bus_to_virt(x) __phys_to_virt(x)
++
++#ifdef CONFIG_DISCONTIGMEM
++/*
++ * Because of the wide memory address space between physical RAM banks on the
++ * SA1100, it's much more convenient to use Linux's NUMA support to implement
++ * our memory map representation.  Assuming all memory nodes have equal access
++ * characteristics, we then have generic discontigous memory support.
++ *
++ * Of course, all this isn't mandatory for SA1100 implementations with only
++ * one used memory bank.  For those, simply undefine CONFIG_DISCONTIGMEM.
++ *
++ * The nodes are matched with the physical memory bank addresses which are
++ * incidentally the same as virtual addresses.
++ *
++ * 	node 0:  0xc0000000 - 0xc7ffffff
++ * 	node 1:  0xc8000000 - 0xcfffffff
++ * 	node 2:  0xd0000000 - 0xd7ffffff
++ * 	node 3:  0xd8000000 - 0xdfffffff
++ */
++
++#define NR_NODES	4
++
++/*
++ * Given a kernel address, find the home node of the underlying memory.
++ */
++#define KVADDR_TO_NID(addr) \
++		(((unsigned long)(addr) - PAGE_OFFSET) >> NODE_MAX_MEM_SHIFT)
++
++/*
++ * Given a physical address, convert it to a node id.
++ */
++#define PHYS_TO_NID(addr) KVADDR_TO_NID(__phys_to_virt(addr))
++
++
++/*
++ * Given a page frame number, convert it to a node id.
++ */
++#define PFN_TO_NID(pfn) \
++	(((pfn) - PHYS_PFN_OFFSET) >> (NODE_MAX_MEM_SHIFT - PAGE_SHIFT))
++
++/*
++ * Given a kaddr, ADDR_TO_MAPBASE finds the owning node of the memory
++ * and returns the mem_map of that node.
++ */
++#define ADDR_TO_MAPBASE(kaddr) \
++			NODE_MEM_MAP(KVADDR_TO_NID((unsigned long)(kaddr)))
++
++#define PFN_TO_MAPBASE(pfn)	NODE_MEM_MAP(PFN_TO_NID(pfn))
++
++/*
++ * Given a kaddr, LOCAL_MAR_NR finds the owning node of the memory
++ * and returns the index corresponding to the appropriate page in the
++ * node's mem_map.
++ */
++#define LOCAL_MAP_NR(addr) \
++	(((unsigned long)(addr) & (NODE_MAX_MEM_SIZE - 1)) >> PAGE_SHIFT)
++
++/*
++ * The 7500 has up-to 64Mb of memory per bank
++ */
++#define NODE_MAX_MEM_SHIFT	26
++#define NODE_MAX_MEM_SIZE	(1<<NODE_MAX_MEM_SHIFT)
++
++#else /* CONFIG_DISCONTIGMEM */
++
++
++#define PHYS_TO_NID(addr)	(0)  
++
++#endif
++
++#endif
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/param.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/param.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/param.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/param.h	2004-02-19 14:57:28.000000000 -0800
+@@ -0,0 +1,6 @@
++/*
++ * linux/include/asm-arm/arch-webpal/param.h
++ *
++ */
++
++#define HZ 100
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/serial.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/serial.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/serial.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/serial.h	2004-11-06 15:56:13.000000000 -0800
+@@ -0,0 +1,68 @@
++/*
++ * linux/include/asm-arm/arch-webpal/serial.h
++ *
++ * Copyright (c) 1996 Russell King.
++ * Copyright (C) 1999 Nexus Electronics Ltd.
++ *
++ * Changelog:
++ *  15-10-1996	RMK	Created
++ *  10-08-1999	PJB	Added COM3/COM4 for CL7500
++ *              BRD	Updated for Webpal
++ */
++#ifndef __ASM_ARCH_SERIAL_H
++#define __ASM_ARCH_SERIAL_H
++
++#include <asm/arch/hardware.h>
++
++/*
++ * This assumes you have a 1.8432 MHz clock for your UART.
++ *
++ * It'd be nice if someone built a serial card with a 24.576 MHz
++ * clock, since the 16550A is capable of handling a top speed of 1.5
++ * megabits/second; but this requires the faster clock.
++ */
++#define BASE_BAUD (1843200 / 16)
++
++#define RS_TABLE_SIZE	16
++
++#define STD_COM_FLAGS (ASYNC_BOOT_AUTOCONF | ASYNC_SKIP_TEST | ASYNC_LOW_LATENCY)
++
++
++	/* For the Webpal, the J10 serial port (0x3f8) is used for the
++   	   remote keyboard/remote control/smart card so don't
++  	   put this in the list of standard serial ports if the
++	   IR keyboard is enabled.  The entry
++	   for ttyS2-ttyS5 are for a modem card in the ISA bus slot. */
++	
++#ifdef CONFIG_ARCH_WEBPAL_IR_KEYB
++#define SERB_ADDR	0
++#define SERB_INTR 	0
++#else
++#define SERB_ADDR	0x3F8
++#define SERB_INTR	10
++#endif
++	
++/*     UART CLK   PORT             IRQ     	FLAGS          */
++
++#define STD_SERIAL_PORT_DEFNS                                                  \
++ { 0, BASE_BAUD, 0x2f8             , 12        , STD_COM_FLAGS }, /* ttyS0 */  \
++ { 0, BASE_BAUD, SERB_ADDR         , SERB_INTR , STD_COM_FLAGS }, /* ttyS1 */  \
++ { 0, BASE_BAUD, ISASLOT_IO + 0x2f8,  9        , STD_COM_FLAGS }, /* ttyS2 */  \
++ { 0, BASE_BAUD, ISASLOT_IO + 0x3f8,  9        , STD_COM_FLAGS }, /* ttyS3 */  \
++ { 0, BASE_BAUD, ISASLOT_IO + 0x2e8,  9        , STD_COM_FLAGS }, /* ttyS4 */  \
++ { 0, BASE_BAUD, ISASLOT_IO + 0x3e8,  9        , STD_COM_FLAGS }, /* ttyS5 */  \
++ { 0, BASE_BAUD, 0                 ,  0        , STD_COM_FLAGS }, /* ttyS6 */  \
++ { 0, BASE_BAUD, 0                 ,  0        , STD_COM_FLAGS }, /* ttyS7 */  \
++ { 0, BASE_BAUD, 0                 ,  0        , STD_COM_FLAGS }, /* ttyS8 */  \
++ { 0, BASE_BAUD, 0                 ,  0        , STD_COM_FLAGS }, /* ttyS9 */  \
++ { 0, BASE_BAUD, 0                 ,  0        , STD_COM_FLAGS }, /* ttyS10 */ \
++ { 0, BASE_BAUD, 0                 ,  0        , STD_COM_FLAGS }, /* ttyS11 */ \
++ { 0, BASE_BAUD, 0                 ,  0        , STD_COM_FLAGS }, /* ttyS12 */ \
++ { 0, BASE_BAUD, 0                 ,  0        , STD_COM_FLAGS }, /* ttyS13 */
++
++#define EXTRA_SERIAL_PORT_DEFNS
++
++#endif
++
++
++
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/system.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/system.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/system.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/system.h	2004-02-19 15:05:38.000000000 -0800
+@@ -0,0 +1,38 @@
++/*
++ * linux/include/asm-arm/arch-webpal/system.h
++ *
++ * Copyright (c) 1999 Nexus Electronics Ltd.
++ *  Updated for Webpal by Bill Danielson 
++ */
++#ifndef __ASM_ARCH_SYSTEM_H
++#define __ASM_ARCH_SYSTEM_H
++
++#include <asm/hardware/iomd.h>
++#include <asm/io.h>
++
++/* For the Webpal, we leave the external clock outputs on during
++   idle because these clocks are used by the AMTEL microcontroller
++   that handles the IR keyboard, remote control, and smart card */
++
++static void arch_idle(void)
++{
++	while (!current->need_resched && !hlt_counter)
++		iomd_writeb(1, IOMD_SUSMODE);
++}
++
++/* For the Webpal, we set the ROMCR0 value to be 16 bits wide
++   since that is the width of our FLASH */
++
++#define arch_reset(mode)			\
++	do {					\
++		iomd_writeb(0x40, IOMD_ROMCR0);	\
++		iomd_writeb(0, IOMD_IRQMASKA);	\
++		iomd_writeb(0, IOMD_IRQMASKB);	\
++		iomd_writeb(0, IOMD_IRQMASKC);	\
++		iomd_writeb(0, IOMD_IRQMASKD);	\
++		iomd_writeb(0, IOMD_FIQMASK);	\
++		cpu_reset(0);			\
++	} while (0);
++
++
++#endif
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/time.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/time.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/time.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/time.h	2004-03-14 17:29:17.000000000 -0800
+@@ -0,0 +1,76 @@
++/*
++ * linux/include/asm-arm/arch-webpal/time.h
++ *
++ * Copyright (c) 1996-2000 Russell King.
++ *
++ * Changelog:
++ *  24-Sep-1996	RMK	Created
++ *  10-Oct-1996	RMK	Brought up to date with arch-sa110eval
++ *  04-Dec-1997	RMK	Updated for new arch/arm/time.c
++ *              BRD     Updated for Webpal
++ */
++
++static void timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
++{
++	do_timer(regs);
++	do_set_rtc();
++	do_profile(regs);
++
++	do_leds();
++}
++
++#ifdef CONFIG_LEDS
++
++/* WebPal LED routines. */
++/* Blink yellow LED once per second */
++/* Red LED lit whenever NOT in idle loop */
++
++#define LEDS (volatile unsigned int *)(0xe0200000)
++
++#define WEBPAL_LED_RED		0x02
++#define WEBPAL_LED_YELLOW	0x01
++
++static int led_state = 0;
++
++void webpal_leds(led_event_t ledevt)
++{
++	switch (ledevt) {
++
++#ifdef CONFIG_LEDS_TIMER		
++	case led_timer:
++		led_state ^= WEBPAL_LED_YELLOW;
++		break;
++#endif
++#ifdef CONFIG_LEDS_CPU		
++	case led_idle_end:
++		led_state &= ~WEBPAL_LED_RED;
++		break;
++	case led_idle_start:
++		led_state |= WEBPAL_LED_RED;
++		break;
++#endif		
++	default:
++		break;
++
++	}	
++	*(LEDS) = led_state;
++}
++
++#endif
++
++/*
++ * Set up timer interrupt.
++ */
++static inline void setup_timer(void)
++{
++	extern void ioctime_init(void);
++	ioctime_init();
++
++	timer_irq.handler = timer_interrupt;
++
++#ifdef CONFIG_LEDS	
++	leds_event = webpal_leds;		/* Register our led routine */
++#endif
++	setup_arm_irq(IRQ_TIMER, &timer_irq);
++}
++
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/timex.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/timex.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/timex.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/timex.h	2004-02-19 14:41:20.000000000 -0800
+@@ -0,0 +1,12 @@
++/*
++ * linux/include/asm-arm/arch-webpal/timex.h
++ *
++ */
++
++/*
++ * On WebPal clock ticks at 2.5 Mhz since it has 40 Mhz IO clock rather than 
++ * the standard 32 Mhz one.
++ */
++
++#define CLOCK_TICK_RATE		2500000
++
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/uncompress.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/uncompress.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/uncompress.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/uncompress.h	2004-02-19 14:53:36.000000000 -0800
+@@ -0,0 +1,33 @@
++/*
++ * linux/include/asm-arm/arch-webpal/uncompress.h
++ *
++ */
++
++/* Webpal bootstrap has a "putc routine located in flash at location 0x20 */
++/* We use this for outputting message to either serial or video during
++   zImage decompress */
++   
++void (*putc)() = (void *)0x20;
++
++/*
++ * This does not append a newline
++ */
++static void puts(const char *s)
++{
++	while (*s) {
++		putc(*s);
++		if (*s == '\n')
++			putc('\r');
++		s++;
++	}
++}
++
++static __inline__ void arch_decomp_setup(void)
++{
++}
++
++/*
++ * nothing to do
++ */
++ 
++#define arch_decomp_wdog()
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/vmalloc.h linux-2.4.18-rmk4/include/asm-arm/arch-webpal/vmalloc.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/arch-webpal/vmalloc.h	1969-12-31 16:00:00.000000000 -0800
++++ linux-2.4.18-rmk4/include/asm-arm/arch-webpal/vmalloc.h	2004-02-19 14:41:34.000000000 -0800
+@@ -0,0 +1,17 @@
++/*
++ * linux/include/asm-arm/arch-webpal/vmalloc.h
++ */
++
++/*
++ * Just any arbitrary offset to the start of the vmalloc VM area: the
++ * current 8MB value just means that there will be a 8MB "hole" after the
++ * physical memory until the kernel virtual memory starts.  That means that
++ * any out-of-bounds memory accesses will hopefully be caught.
++ * The vmalloc() routines leaves a hole of 4kB between each vmalloced
++ * area for the same reason. ;)
++ */
++ 
++#define VMALLOC_OFFSET	  (8*1024*1024)
++#define VMALLOC_START	  (((unsigned long)high_memory + VMALLOC_OFFSET) & ~(VMALLOC_OFFSET-1))
++#define VMALLOC_VMADDR(x) ((unsigned long)(x))
++#define VMALLOC_END       (PAGE_OFFSET + 0x1c000000)
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/cpu-single.h linux-2.4.18-rmk4/include/asm-arm/cpu-single.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/cpu-single.h	2001-10-11 09:04:57.000000000 -0700
++++ linux-2.4.18-rmk4/include/asm-arm/cpu-single.h	2004-05-17 10:11:38.000000000 -0700
+@@ -85,6 +85,21 @@
+ extern void cpu_set_pte(pte_t *ptep, pte_t pte);
+ extern volatile void cpu_reset(unsigned long addr);
+ 
++#ifdef CONFIG_CPU_32v3
++
++#define cpu_switch_mm(pgd,tsk)  					\
++	{								\
++		extern pgd_t *pgd_saved;				\
++		local_irq_disable();					\
++		cpu_set_pgd(__virt_to_phys((unsigned long)(pgd)));	\
++		pgd_saved = pgd;					\
++		local_irq_enable();					\
++	}
++
++#define cpu_get_pgd()	(pgd_saved)
++
++#else
++
+ #define cpu_switch_mm(pgd,tsk) cpu_set_pgd(__virt_to_phys((unsigned long)(pgd)))
+ 
+ #define cpu_get_pgd()	\
+@@ -97,3 +112,5 @@
+ 	})
+ 
+ #endif
++
++#endif
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/include/asm-arm/hardware/iomd.h linux-2.4.18-rmk4/include/asm-arm/hardware/iomd.h
+--- linux-orig-2.4.18-rmk4/include/asm-arm/hardware/iomd.h	2001-04-12 12:20:31.000000000 -0700
++++ linux-2.4.18-rmk4/include/asm-arm/hardware/iomd.h	2004-01-30 00:04:13.000000000 -0800
+@@ -33,7 +33,7 @@
+ #define IOMD_KARTRX	(0x004)
+ #define IOMD_KCTRL	(0x008)
+ 
+-#ifdef CONFIG_ARCH_CLPS7500
++#if defined(CONFIG_ARCH_CLPS7500) || defined(CONFIG_ARCH_WEBPAL)
+ #define IOMD_IOLINES	(0x00C)
+ #endif
+ 
+@@ -42,7 +42,7 @@
+ #define IOMD_IRQCLRA	(0x014)
+ #define IOMD_IRQMASKA	(0x018)
+ 
+-#ifdef CONFIG_ARCH_CLPS7500
++#if defined(CONFIG_ARCH_CLPS7500) || defined(CONFIG_ARCH_WEBPAL)
+ #define IOMD_SUSMODE	(0x01C)
+ #endif
+ 
+@@ -54,7 +54,7 @@
+ #define IOMD_FIQREQ	(0x034)
+ #define IOMD_FIQMASK	(0x038)
+ 
+-#ifdef CONFIG_ARCH_CLPS7500
++#if defined(CONFIG_ARCH_CLPS7500) || defined(CONFIG_ARCH_WEBPAL)
+ #define IOMD_CLKCTL	(0x03C)
+ #endif
+ 
+@@ -72,7 +72,7 @@
+ #define IOMD_T1GO	(0x058)
+ #define IOMD_T1LATCH	(0x05c)
+ 
+-#ifdef CONFIG_ARCH_CLPS7500
++#if defined(CONFIG_ARCH_CLPS7500) || defined(CONFIG_ARCH_WEBPAL)
+ #define IOMD_IRQSTATC	(0x060)
+ #define IOMD_IRQREQC	(0x064)
+ #define IOMD_IRQMASKC	(0x068)
+@@ -101,7 +101,7 @@
+ #define IOMD_MOUSEY	(0x0A4)
+ #endif
+ 
+-#ifdef CONFIG_ARCH_CLPS7500
++#if defined(CONFIG_ARCH_CLPS7500) || defined(CONFIG_ARCH_WEBPAL)
+ #define IOMD_MSEDAT	(0x0A8)
+ #define IOMD_MSECTL	(0x0Ac)
+ #endif
+@@ -114,7 +114,7 @@
+ #ifdef CONFIG_ARCH_RPC
+ #define IOMD_DMAEXT	(0x0CC)
+ #endif
+-#ifdef CONFIG_ARCH_CLPS7500
++#if defined(CONFIG_ARCH_CLPS7500) || defined(CONFIG_ARCH_WEBPAL)
+ #define IOMD_ASTCR	(0x0CC)
+ #define IOMD_DRAMCR	(0x0D0)
+ #define IOMD_SELFREF	(0x0D4)
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/kernel/printk.c linux-2.4.18-rmk4/kernel/printk.c
+--- linux-orig-2.4.18-rmk4/kernel/printk.c	2002-02-25 11:38:13.000000000 -0800
++++ linux-2.4.18-rmk4/kernel/printk.c	2003-03-09 21:03:25.000000000 -0800
+@@ -427,6 +427,7 @@
+ 	va_start(args, fmt);
+ 	printed_len = vsnprintf(printk_buf, sizeof(printk_buf), fmt, args);
+ 	va_end(args);
++	/* printascii(printk_buf); */
+ 
+ 	/*
+ 	 * Copy the output into log_buf.  If the caller didn't provide
+diff -ruN --exclude-from=dontdiff linux-orig-2.4.18-rmk4/Makefile linux-2.4.18-rmk4/Makefile
+--- linux-orig-2.4.18-rmk4/Makefile	2005-03-04 14:03:33.295892192 -0800
++++ linux-2.4.18-rmk4/Makefile	2003-03-08 10:08:25.000000000 -0800
+@@ -5,7 +5,7 @@
+ 
+ KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ 
+-ARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ -e s/arm.*/arm/ -e s/sa110/arm/)
++ARCH := arm
+ KERNELPATH=kernel-$(shell echo $(KERNELRELEASE) | sed -e "s/-//g")
+ 
+ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
+@@ -19,7 +19,7 @@
+ HOSTCC  	= gcc
+ HOSTCFLAGS	= -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer
+ 
+-CROSS_COMPILE 	=
++CROSS_COMPILE 	= arm-linux-
+ 
+ #
+ # Include the make variables (CC, etc...)
